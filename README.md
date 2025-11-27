@@ -50,85 +50,64 @@ IDE : Android Studio
 협업 및 배포 : GitHub  
 
 
-📂 Cospicker 프로젝트 구조 (Flutter 버전)
---------------------
-lib  
-│
-├── main.dart                         // 앱 진입점  
-├── app.dart                          // 전체 앱 설정 (Theme, Route 설정)  
-│
-├── config                            // 전역 설정 및 공통 상수  
-│   ├── app_colors.dart               // 색상 테마  
-│   ├── app_fonts.dart                // 폰트 스타일  
-│   └── app_routes.dart               // 라우팅/네비게이션 설정  
-│
-├── models                            // 데이터 모델  
-│   ├── user_model.dart               // 사용자 데이터  
-│   ├── post_model.dart               // 커뮤니티 게시글  
-│   ├── comment_model.dart            // 댓글  
-│   ├── stay_model.dart               // 숙소 데이터  
-│   └── notification_model.dart       // 알림 모델  
-│
-├── services                          // Firebase 및 Api 모듈  
-│   ├── auth_service.dart             // Firebase Auth / 로그인, 회원가입  
-│   ├── firestore_service.dart        // Firestore CRUD 처리  
-│   ├── storage_service.dart          // Firebase Storage (이미지 업로드)  
-│   └── notification_service.dart     // 알림 관련 기능  
-│
-├── providers                         // 상태관리 (Provider/Riverpod 사용 시)  
-│   ├── user_provider.dart
-│   ├── community_provider.dart  
-│   ├── stay_provider.dart  
-│   └── notification_provider.dart  
-│
-├── widgets                           // 재사용 가능한 UI 컴포넌트  
-│   ├── custom_button.dart            // 공통 버튼  
-│   ├── custom_textfield.dart         // 텍스트 입력 박스  
-│   ├── post_card.dart                // 게시글 UI 컴포넌트  
-│   ├── stay_card.dart                // 숙소 카드 UI  
-│   └── loading_indicator.dart        // 로딩 위젯  
-│
-└── screens
-    ├── auth                          // 로그인/회원가입 화면  
-    │   ├── login_screen.dart
-    │   ├── signup_screen.dart
-    │   └── profile_register_screen.dart
-    │
-    ├── home                          // 홈 + 하단 네비게이션  
-    │   ├── home_screen.dart
-    │   └── bottom_nav.dart
-    │
-    ├── community                     // 커뮤니티 기능  
-    │   ├── community_screen.dart  
-    │   ├── post_write_screen.dart  
-    │   ├── post_detail_screen.dart  
-    │   └── community_search_screen.dart  
-    │
-    ├── chat                          // 1:1 채팅 (구현 여부에 따라)  
-    │   ├── chat_list_screen.dart  
-    │   └── chat_room_screen.dart  
-    │
-    ├── stay                          // 숙소 검색/추천 기능  
-    │   ├── stay_search_screen.dart  
-    │   ├── stay_list_screen.dart  
-    │   └── stay_detail_screen.dart  
-    │
-    ├── myinfo                        // 마이페이지  
-    │   ├── myinfo_screen.dart  
-    │   ├── my_posts_screen.dart  
-    │   ├── my_comments_screen.dart  
-    │   └── settings_screen.dart  
-    │
-    └── splash
-        └── splash_screen.dart        // 앱 첫 로딩 화면  
 
+<strong>📂 Cospicker 프로젝트 구조 (Flutter 버전)</strong>  
+
+```plaintext
+lib
+│
+├── main.dart                         // 앱 진입점
+├── app.dart                          // 전체 앱 설정 (Theme, Route 설정)
+│
+├── config                            // 전역 설정 및 공통 상수
+│   ├── app_colors.dart               // 색상 테마
+│   ├── app_fonts.dart                // 폰트 스타일
+│   └── app_routes.dart               // 라우팅/네비게이션 설정
+│
+├── models                            // 데이터 모델
+│   ├── user_model.dart
+│   ├── post_model.dart
+│   ├── comment_model.dart
+│   ├── stay_model.dart
+│   └── notification_model.dart
+│
+├── services                          // Firebase 및 API 모듈
+│   ├── auth_service.dart
+│   ├── firestore_service.dart
+│   ├── storage_service.dart
+│   └── notification_service.dart
+│
+├── providers                         // 상태관리
+│   ├── user_provider.dart
+│   ├── community_provider.dart
+│   ├── stay_provider.dart
+│   └── notification_provider.dart
+│
+├── widgets                           // 재사용 가능한 UI 컴포넌트
+│   ├── custom_button.dart
+│   ├── custom_textfield.dart
+│   ├── post_card.dart
+│   ├── stay_card.dart
+│   └── loading_indicator.dart
+│
+└── screens                           // 개별 화면
+    ├── auth
+    ├── home
+    ├── community
+    ├── chat
+    ├── stay
+    ├── myinfo
+    └── splash
+
+```
 -----------------------
 
 🚀 실행 방법
 -------------
-flutter pub get
+```plaintext
+flutter pub get  
 flutter run
-
+```
 📎 저장소 구조
 ----------------
 Repo	설명  
