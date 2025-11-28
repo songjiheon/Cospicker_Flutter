@@ -4,6 +4,7 @@ import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'screens/splash/SplashScreen.dart';
 import 'firebase_options.dart';
 import 'screens/auth/LoginScreen.dart';
@@ -13,30 +14,29 @@ import 'screens/auth/SignupComplete.dart';
 import 'screens/home/HomeScreen.dart';
 
 import 'screens/profile/ProfileScreen.dart';
-import '/screens/profile/MyinfoScreen.dart';
-import '/screens/profile/info/EditName.dart';
-import '/screens/profile/info/EditPhoneNumber.dart';
-import '/screens/profile/info/EditBirth.dart';
-import '/screens/profile/info/EditGender.dart';
-import '/screens/profile/info/EditPassword.dart';
-import '/screens/profile/info/Notice.dart';
+import 'screens/profile/MyinfoScreen.dart';
+import 'screens/profile/info/EditName.dart';
+import 'screens/profile/info/EditPhoneNumber.dart';
+import 'screens/profile/info/EditBirth.dart';
+import 'screens/profile/info/EditGender.dart';
+import 'screens/profile/info/EditPassword.dart';
+import 'screens/profile/info/Notice.dart';
 
-import '/screens/Community/MyPost.dart';
-import '/screens/Community/MyComment.dart';
-import '/screens/community/CommunityMainScreen.dart';
-import '/screens/community/CommunityWriting.dart';
+import 'screens/community/MyPost.dart';
+import 'screens/community/MyComment.dart';
 
-import '/screens/chat/ChatRoom.dart';
-import '/screens/chat/ChatRoomList.dart';
+import 'screens/chat/ChatRoom.dart';
+import 'screens/chat/ChatRoomList.dart';
 
-
-
-
-
+// 숙소 화면 import 추가
+import 'screens/stay/StaySearchScreen.dart';
+import 'screens/stay/StayListScreen.dart';
+import 'screens/stay/StayDetailScreen.dart';
+import 'screens/stay/StayDatePeopleScreen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -48,32 +48,54 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'COSPICKER',
-        initialRoute: '/',
+      initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/signup': (context) => SignupScreen(),
         '/signupsuccess': (context) => SignupCompleteScreen(),
-        '/profile' : (context) => ProfileScreen(),
-        '/myInfo' :(context) => MyinfoScreen(),
-        '/editName': (context) => EditNameScreen (),
-        '/editGender':(context)=>EditGenderScreen(),
-        '/editPhone' : (context) => EditPhoneScreen(),
-        '/editBirth' : (context) => EditBirthScreen(),
-        '/editPassword' : (context) => EditPasswordScreen(),
-        '/community' : (context) => CommunityMainScreen(),
+        '/profile': (context) => ProfileScreen(),
+        '/myInfo': (context) => MyinfoScreen(),
+        '/editName': (context) => EditNameScreen(),
+        '/editGender': (context) => EditGenderScreen(),
+        '/editPhone': (context) => EditPhoneScreen(),
+        '/editBirth': (context) => EditBirthScreen(),
+        '/editPassword': (context) => EditPasswordScreen(),
+        '/community': (context) => CommunityMainScreen(),
         '/communityWrite': (context) => CommunityWriteScreen(),
-        '/notice' : (context) => NoticeScreen(),
-        '/myPost' : (context) => MyPostsScreen(),
-        '/myComment' : (context) => MyCommentsScreen(),
+        '/notice': (context) => NoticeScreen(),
+        '/myPost': (context) => MyPostsScreen(),
+        '/myComment': (context) => MyCommentsScreen(),
+
         '/chatRoomList': (context) {
           final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
           return ChatRoomListScreen(uid: uid);
         },
+
         '/chatRoom': (context) {
           final roomId = ModalRoute.of(context)!.settings.arguments as String;
           return ChatRoomScreen(roomId: roomId);
+        },
+
+        // 숙소 화면 라우트
+        '/staySearch': (context) => const StaySearchScreen(),
+
+        '/stayDatePeople': (context) => const StayDatePeopleScreen(),
+
+        '/stayList': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+
+          return StayListScreen(
+            location: args["location"],
+            date: args["date"],
+            people: args["people"],
+          );
+        },
+
+        '/stayDetail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          return StayDetailScreen(stayData: args);
         },
       },
     );

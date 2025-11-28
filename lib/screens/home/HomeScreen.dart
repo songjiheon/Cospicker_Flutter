@@ -35,81 +35,82 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.white,
       // 상단 스크롤 가능 영역
       body: SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: 80),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // COSPICKER 타이틀
-              Text(
-                "COSPICKER",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // 검색 바
-              Container(
-                height: 50,
-                padding: EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Color(0xFFF5F5F5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Image.asset("assets/menu_icon.png", width: 20, height: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: "검색어를 입력하세요",
-                          border: InputBorder.none,
-                        ),
-                      ),
-                    ),
-                    Image.asset("assets/search_icon.png", width: 20, height: 20),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16),
-
-              // 상단 3개 메뉴
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.only(bottom: 80),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _topMenu("숙소", "assets/home_icon.png"),
-                  _topMenu("맛집", "assets/store_icon.png"),
-                  _topMenu("커뮤니티", "assets/community_icon.png"),
+
+                  // COSPICKER 타이틀
+                  Text(
+                    "COSPICKER",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // 검색 바
+                  Container(
+                    height: 50,
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset("assets/menu_icon.png", width: 20, height: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: "검색어를 입력하세요",
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                        Image.asset("assets/search_icon.png", width: 20, height: 20),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // 상단 3개 메뉴
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _topMenu("숙소", "assets/home_icon.png"),
+                      _topMenu("맛집", "assets/store_icon.png"),
+                      _topMenu("커뮤니티", "assets/community_icon.png"),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+
+                  Text("최근 본 숙소 >", style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  _horizontalListView(),
+
+                  SizedBox(height: 16),
+                  Text("$userName님 근처 숙소 >",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  _horizontalListView(),
+
+                  // 근처 맛집 >
+                  SizedBox(height: 16),
+                  Text("근처 맛집 >", style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  _horizontalListView(),
+
+                  SizedBox(height: 20),
                 ],
               ),
-              SizedBox(height: 20),
-
-              Text("최근 본 숙소 >", style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              _horizontalListView(),
-
-              SizedBox(height: 16),
-              Text("$userName님 근처 숙소 >",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              _horizontalListView(),
-
-              // 근처 맛집 >
-              SizedBox(height: 16),
-              Text("근처 맛집 >", style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              _horizontalListView(),
-
-              SizedBox(height: 20),
-            ],
-          ),
-        ),
-      )
+            ),
+          )
       ),
 
       // 하단 네비게이션 바
@@ -139,16 +140,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _topMenu(String label, String asset) {
     return InkWell(
       onTap: () {
-        if(label=="커뮤니티"){
+        //  숙소 클릭 시 staySearch로 이동
+        if(label=="숙소"){
+          Navigator.pushNamed(context, '/staySearch');
+        }
+        else if(label=="맛집"){
+          Navigator.pushNamed(context, '/restaurantSearch');
+        }
+        else if(label=="커뮤니티"){
           Navigator.pushNamed(context, '/community');
         }
       },
-      child: Column(
-        children: [
-          Image.asset(asset, width: 40, height: 40),
-          SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12)),
-        ],
+
+      // ⭐ 터치 범위 확장해서 클릭 100% 되도록 수정
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Image.asset(asset, width: 40, height: 40),
+            SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 12)),
+          ],
+        ),
       ),
     );
   }
