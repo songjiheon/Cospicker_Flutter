@@ -53,51 +53,54 @@ IDE : Android Studio
 
 <strong>📂 Cospicker 프로젝트 구조 (Flutter 버전)</strong>  
 
+
 ```plaintext
-lib
+lib/
 │
-├── main.dart                         // 앱 진입점
-├── app.dart                          // 전체 앱 설정 (Theme, Route 설정)
+├── screens/
+│   │
+│   ├── auth/
+│   │   ├── LoginScreen.dart
+│   │   ├── SignupScreen.dart
+│   │   └── SignupComplete.dart
+│   │
+│   ├── chat/
+│   │   ├── ChatRoom.dart
+│   │   ├── ChatRoomList.dart
+│   │   └── CreateChatRoom.dart
+│   │
+│   ├── community/
+│   │   ├── CommunityMainScreen.dart
+│   │   ├── CommunityPost.dart
+│   │   ├── CommunityWriting.dart
+│   │   ├── MyComment.dart
+│   │   └── MyPost.dart
+│   │
+│   ├── home/
+│   │   └── HomeScreen.dart
+│   │
+│   ├── profile/
+│   │   └── Info/
+│   │       ├── EditBirth.dart
+│   │       ├── EditGender.dart
+│   │       ├── EditName.dart
+│   │       ├── EditNickname.dart
+│   │       ├── EditPassword.dart
+│   │       ├── EditPhoneNumber.dart
+│   │       ├── Notice.dart
+│   │       ├── NoticeDetail.dart
+│   │       ├── MyinfoScreen.dart
+│   │       └── ProfileScreen.dart
+│   │
+│   ├── splash/
+│   │   └── SplashScreen.dart
+│   │
+│   └── Widget/
+│       └── BottomNavItem.dart
 │
-├── config                            // 전역 설정 및 공통 상수
-│   ├── app_colors.dart               // 색상 테마
-│   ├── app_fonts.dart                // 폰트 스타일
-│   └── app_routes.dart               // 라우팅/네비게이션 설정
-│
-├── models                            // 데이터 모델
-│   ├── user_model.dart
-│   ├── post_model.dart
-│   ├── comment_model.dart
-│   ├── stay_model.dart
-│   └── notification_model.dart
-│
-├── services                          // Firebase 및 API 모듈
-│   ├── auth_service.dart
-│   ├── firestore_service.dart
-│   ├── storage_service.dart
-│   └── notification_service.dart
-│
-├── providers                         // 상태관리
-│   ├── user_provider.dart
-│   ├── community_provider.dart
-│   ├── stay_provider.dart
-│   └── notification_provider.dart
-│
-├── widgets                           // 재사용 가능한 UI 컴포넌트
-│   ├── custom_button.dart
-│   ├── custom_textfield.dart
-│   ├── post_card.dart
-│   ├── stay_card.dart
-│   └── loading_indicator.dart
-│
-└── screens                           // 개별 화면
-    ├── auth
-    ├── home
-    ├── community
-    ├── chat
-    ├── stay
-    ├── myinfo
-    └── splash
+├── firebase_options.dart
+└── main.dart
+
 
 ```
 -----------------------
