@@ -59,47 +59,58 @@ lib/
 │
 ├── screens/
 │   │
-│   ├── auth/
+│   ├── auth/                        # 🔐 로그인 · 회원가입
 │   │   ├── LoginScreen.dart
 │   │   ├── SignupScreen.dart
 │   │   └── SignupComplete.dart
 │   │
-│   ├── chat/
+│   ├── chat/                        # 💬 채팅
 │   │   ├── ChatRoom.dart
 │   │   ├── ChatRoomList.dart
 │   │   └── CreateChatRoom.dart
 │   │
-│   ├── community/
+│   ├── community/                   # 📝 커뮤니티
 │   │   ├── CommunityMainScreen.dart
 │   │   ├── CommunityPost.dart
 │   │   ├── CommunityWriting.dart
 │   │   ├── MyComment.dart
 │   │   └── MyPost.dart
 │   │
-│   ├── home/
+│   ├── home/                        # 🏠 홈 화면
 │   │   └── HomeScreen.dart
 │   │
-│   ├── profile/
-│   │   └── Info/
-│   │       ├── EditBirth.dart
-│   │       ├── EditGender.dart
-│   │       ├── EditName.dart
-│   │       ├── EditNickname.dart
-│   │       ├── EditPassword.dart
-│   │       ├── EditPhoneNumber.dart
-│   │       ├── Notice.dart
-│   │       ├── NoticeDetail.dart
-│   │       ├── MyinfoScreen.dart
-│   │       └── ProfileScreen.dart
+│   ├── profile/                     # 👤 프로필 & 정보 수정
+│   │   ├── Info/
+│   │   │   ├── EditBirth.dart
+│   │   │   ├── EditGender.dart
+│   │   │   ├── EditName.dart
+│   │   │   ├── EditNickname.dart
+│   │   │   ├── EditPassword.dart
+│   │   │   ├── EditPhoneNumber.dart
+│   │   │   ├── Notice.dart
+│   │   │   ├── NoticeDetail.dart
+│   │   │   ├── MyinfoScreen.dart
+│   │   │   └── ProfileScreen.dart
 │   │
 │   ├── splash/
 │   │   └── SplashScreen.dart
 │   │
-│   └── Widget/
+│   ├── stay/                        # 🏨 숙소 기능 (새로 추가됨)
+│   │   ├── StaySearchScreen.dart        # 검색 (지역, 날짜, 인원)
+│   │   ├── StayListScreen.dart          # 숙소 리스트
+│   │   ├── StayDetailScreen.dart        # 숙소 상세 화면
+│   │   ├── StayDatePeopleScreen.dart    # 날짜·인원 선택 팝업
+│   │   ├── StayReviewScreen.dart        # 리뷰 전체보기
+│   │   ├── StayReviewPolicyScreen.dart  # 리뷰 정책 안내
+│   │   ├── StayRoomListScreen.dart      # 모든 객실 보기
+│   │   └── StayRoomDetailScreen.dart    # 객실 상세 화면
+│   │
+│   └── Widget/                       # 공통 UI 위젯
 │       └── BottomNavItem.dart
 │
-├── firebase_options.dart
-└── main.dart
+├── firebase_options.dart             # Firebase 설정 파일
+└── main.dart                         # 라우팅 & 앱 시작점
+
 
 
 ```
