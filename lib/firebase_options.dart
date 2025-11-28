@@ -65,5 +65,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'travel-planner-app-e6167.firebasestorage.app',
     iosBundleId: 'com.example.cospicker',
   );
-
 }

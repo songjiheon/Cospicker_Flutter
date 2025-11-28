@@ -9,16 +9,14 @@ class StayDatePeopleScreen extends StatefulWidget {
 }
 
 class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
-  // 날짜 상태
   DateTime? checkIn;
   DateTime? checkOut;
   DateTime focusedDay = DateTime.now();
 
-  // 인원 상태
   int adults = 2;
   int children = 1;
 
-  // 초기화 함수
+  // 🔥 초기화
   void resetAll() {
     setState(() {
       checkIn = null;
@@ -28,18 +26,15 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
     });
   }
 
-  // 적용하기 → 이전 화면으로 값 전달
+  // 🔥 적용하기 → 리스트/상세 화면으로 데이터 전달
   void applySelection() {
     if (checkIn == null || checkOut == null) return;
 
-    // 날짜 표시 형식
-    String formattedDate =
-        "${checkIn!.month}.${checkIn!.day} - ${checkOut!.month}.${checkOut!.day}";
-
-    // 총 인원
-    int totalPeople = adults + children;
-
-    Navigator.pop(context, {"date": formattedDate, "people": totalPeople});
+    Navigator.pop(context, {
+      "date":
+          "${checkIn!.month}.${checkIn!.day} - ${checkOut!.month}.${checkOut!.day}",
+      "people": adults + children,
+    });
   }
 
   @override
@@ -53,7 +48,7 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 상단 닫기 버튼 + 제목
+              // 🔙 닫기 버튼 + 제목
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -65,13 +60,13 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
                     "날짜 및 인원 선택",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 28), // 오른쪽 균형
+                  const SizedBox(width: 28),
                 ],
               ),
 
               const SizedBox(height: 25),
 
-              // 날짜 표시 바
+              // 🔥 선택된 날짜 표시
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -97,16 +92,15 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
 
               const SizedBox(height: 20),
 
-              // 캘린더 선택
+              // 🔥 캘린더 날짜 선택
               TableCalendar(
                 focusedDay: focusedDay,
                 firstDay: DateTime.utc(2020, 1, 1),
                 lastDay: DateTime.utc(2035, 12, 31),
                 headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
                   titleCentered: true,
+                  formatButtonVisible: false,
                 ),
-
                 selectedDayPredicate: (day) =>
                     (checkIn != null &&
                     checkOut != null &&
@@ -126,13 +120,11 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
 
                 onDaySelected: (selectedDay, focused) {
                   setState(() {
-                    // checkIn 선택
                     if (checkIn == null ||
                         (checkIn != null && checkOut != null)) {
                       checkIn = selectedDay;
                       checkOut = null;
                     } else {
-                      // checkOut 선택
                       if (selectedDay.isBefore(checkIn!)) {
                         checkOut = checkIn;
                         checkIn = selectedDay;
@@ -147,26 +139,7 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
 
               const SizedBox(height: 20),
 
-              // 선택 완료 버튼
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6EA8FE),
-                    minimumSize: const Size(double.infinity, 48),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Text("선택 완료", style: TextStyle(fontSize: 16)),
-                ),
-              ),
-
-              const SizedBox(height: 35),
-
-              // 인원 선택 제목
+              // 🔥 인원 제목
               Text(
                 "인원 ${adults + children}",
                 style: const TextStyle(
@@ -177,7 +150,7 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
 
               const SizedBox(height: 12),
 
-              // 인원 선택 박스
+              // 🔥 인원 선택 box
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -191,19 +164,14 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text("인원 변경", style: TextStyle(fontSize: 16)),
-
                         Row(
                           children: [
                             IconButton(
                               icon: const Icon(Icons.remove_circle_outline),
                               onPressed: () {
-                                setState(() {
-                                  if (adults + children > 1) {
-                                    adults = (adults + children == 1)
-                                        ? adults
-                                        : adults - 1;
-                                  }
-                                });
+                                if (adults + children > 1) {
+                                  setState(() => adults--);
+                                }
                               },
                             ),
                             Text(
@@ -213,9 +181,7 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
                             IconButton(
                               icon: const Icon(Icons.add_circle_outline),
                               onPressed: () {
-                                setState(() {
-                                  adults++;
-                                });
+                                setState(() => adults++);
                               },
                             ),
                           ],
@@ -249,7 +215,7 @@ class _StayDatePeopleScreenState extends State<StayDatePeopleScreen> {
 
               const SizedBox(height: 25),
 
-              // 적용 버튼
+              // 🔥 적용 버튼
               ElevatedButton(
                 onPressed: applySelection,
                 style: ElevatedButton.styleFrom(

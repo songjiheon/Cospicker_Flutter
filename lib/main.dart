@@ -7,12 +7,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'screens/splash/SplashScreen.dart';
 import 'firebase_options.dart';
+
+// Auth
 import 'screens/auth/LoginScreen.dart';
 import 'screens/auth/SignupScreen.dart';
 import 'screens/auth/SignupComplete.dart';
 
+// Home
 import 'screens/home/HomeScreen.dart';
 
+// Profile
 import 'screens/profile/ProfileScreen.dart';
 import 'screens/profile/MyinfoScreen.dart';
 import 'screens/profile/info/EditName.dart';
@@ -22,17 +26,22 @@ import 'screens/profile/info/EditGender.dart';
 import 'screens/profile/info/EditPassword.dart';
 import 'screens/profile/info/Notice.dart';
 
+// Community
 import 'screens/community/MyPost.dart';
 import 'screens/community/MyComment.dart';
 
+// Chat
 import 'screens/chat/ChatRoom.dart';
 import 'screens/chat/ChatRoomList.dart';
 
-// 숙소 화면 import 추가
+// Stay
 import 'screens/stay/StaySearchScreen.dart';
 import 'screens/stay/StayListScreen.dart';
 import 'screens/stay/StayDetailScreen.dart';
 import 'screens/stay/StayDatePeopleScreen.dart';
+import 'screens/stay/StayReviewScreen.dart';
+import 'screens/stay/StayRoomListScreen.dart';
+import 'screens/stay/StayReviewPolicyScreen.dart'; // ⭐ 정책 화면 추가
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,11 +59,18 @@ class MyApp extends StatelessWidget {
       title: 'COSPICKER',
       initialRoute: '/',
       routes: {
+        //------------------------------------------------------------
+        // 기본 화면
+        //------------------------------------------------------------
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/signup': (context) => SignupScreen(),
         '/signupsuccess': (context) => SignupCompleteScreen(),
+
+        //------------------------------------------------------------
+        // 프로필
+        //------------------------------------------------------------
         '/profile': (context) => ProfileScreen(),
         '/myInfo': (context) => MyinfoScreen(),
         '/editName': (context) => EditNameScreen(),
@@ -62,29 +78,38 @@ class MyApp extends StatelessWidget {
         '/editPhone': (context) => EditPhoneScreen(),
         '/editBirth': (context) => EditBirthScreen(),
         '/editPassword': (context) => EditPasswordScreen(),
-        '/community': (context) => CommunityMainScreen(),
-        '/communityWrite': (context) => CommunityWriteScreen(),
         '/notice': (context) => NoticeScreen(),
         '/myPost': (context) => MyPostsScreen(),
         '/myComment': (context) => MyCommentsScreen(),
 
+        //------------------------------------------------------------
+        // 커뮤니티
+        //------------------------------------------------------------
+        '/community': (context) => CommunityMainScreen(),
+        '/communityWrite': (context) => CommunityWriteScreen(),
+
+        //------------------------------------------------------------
+        // 채팅
+        //------------------------------------------------------------
         '/chatRoomList': (context) {
           final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
           return ChatRoomListScreen(uid: uid);
         },
-
         '/chatRoom': (context) {
           final roomId = ModalRoute.of(context)!.settings.arguments as String;
           return ChatRoomScreen(roomId: roomId);
         },
 
-        // 숙소 화면 라우트
+        //------------------------------------------------------------
+        // 숙소 검색 / 리스트
+        //------------------------------------------------------------
         '/staySearch': (context) => const StaySearchScreen(),
-
         '/stayDatePeople': (context) => const StayDatePeopleScreen(),
 
         '/stayList': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<dynamic, dynamic>;
 
           return StayListScreen(
             location: args["location"],
@@ -93,9 +118,50 @@ class MyApp extends StatelessWidget {
           );
         },
 
+        //------------------------------------------------------------
+        // 숙소 상세
+        //------------------------------------------------------------
         '/stayDetail': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map;
-          return StayDetailScreen(stayData: args);
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<dynamic, dynamic>;
+
+          return StayDetailScreen(stayData: Map<String, dynamic>.from(args));
+        },
+
+        //------------------------------------------------------------
+        // 리뷰 전체보기
+        //------------------------------------------------------------
+        '/stayReview': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<dynamic, dynamic>;
+
+          return StayReviewScreen(
+            stayName: args["stayName"],
+            rating: args["rating"] * 1.0,
+            reviewImages: List<String>.from(args["reviewImages"] ?? []),
+          );
+        },
+
+        //------------------------------------------------------------
+        // 리뷰 정책 화면 ⭐
+        //------------------------------------------------------------
+        '/stayReviewPolicy': (context) => const StayReviewPolicyScreen(),
+
+        //------------------------------------------------------------
+        // 모든 객실 보기
+        //------------------------------------------------------------
+        '/stayRooms': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments
+                  as Map<dynamic, dynamic>;
+
+          return StayRoomListScreen(
+            stayData: Map<String, dynamic>.from(args["stayData"]),
+            date: args["date"],
+            people: args["people"],
+          );
         },
       },
     );
