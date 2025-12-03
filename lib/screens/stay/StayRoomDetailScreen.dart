@@ -14,7 +14,7 @@ class StayRoomDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List images = roomData["images"] ?? [];
+    final List images = [roomData["roomImage"] ?? ""];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -71,7 +71,7 @@ class StayRoomDetailScreen extends StatelessWidget {
                   left: 16,
                   child: _circleButton(
                     Icons.arrow_back_ios_new,
-                    () => Navigator.pop(context),
+                        () => Navigator.pop(context),
                   ),
                 ),
               ],
