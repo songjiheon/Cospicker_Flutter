@@ -45,3 +45,10 @@ app.*.map.json
 /android/app/release
 google-services.json
 GoogleService-Info.plist
+
+local.properties
+.project
+project.properties
+secure.properties
+.DS_Store
+.env*
