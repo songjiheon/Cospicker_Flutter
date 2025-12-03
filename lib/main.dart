@@ -16,6 +16,9 @@ import 'screens/auth/SignupComplete.dart';
 // Home
 import 'screens/home/HomeScreen.dart';
 
+//near
+import 'screens/near/NearMapScreen.dart';
+
 // Profile
 import 'screens/profile/ProfileScreen.dart';
 import 'screens/profile/MyinfoScreen.dart';
@@ -41,7 +44,13 @@ import 'screens/stay/StayDetailScreen.dart';
 import 'screens/stay/StayDatePeopleScreen.dart';
 import 'screens/stay/StayReviewScreen.dart';
 import 'screens/stay/StayRoomListScreen.dart';
-import 'screens/stay/StayReviewPolicyScreen.dart'; // ⭐ 정책 화면 추가
+import 'screens/stay/StayReviewPolicyScreen.dart';
+
+import 'screens/stay/RestaurantListScreen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +64,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorObservers: [routeObserver],
       debugShowCheckedModeBanner: false,
       title: 'COSPICKER',
       initialRoute: '/',
@@ -89,6 +99,10 @@ class MyApp extends StatelessWidget {
         '/communityWrite': (context) => CommunityWriteScreen(),
 
         //------------------------------------------------------------
+        // 주변
+        //------------------------------------------------------------
+
+        //------------------------------------------------------------
         // 채팅
         //------------------------------------------------------------
         '/chatRoomList': (context) {
@@ -100,16 +114,26 @@ class MyApp extends StatelessWidget {
           return ChatRoomScreen(roomId: roomId);
         },
 
+        //맛집
+        '/restaurantList': (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments
+          as Map<dynamic, dynamic>;
+
+          return RestaurantListScreen(
+            location: args["location"],
+          );
+        },
+
         //------------------------------------------------------------
         // 숙소 검색 / 리스트
         //------------------------------------------------------------
-        '/staySearch': (context) => const StaySearchScreen(),
         '/stayDatePeople': (context) => const StayDatePeopleScreen(),
 
         '/stayList': (context) {
           final args =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<dynamic, dynamic>;
+          ModalRoute.of(context)!.settings.arguments
+          as Map<dynamic, dynamic>;
 
           return StayListScreen(
             location: args["location"],
@@ -123,8 +147,8 @@ class MyApp extends StatelessWidget {
         //------------------------------------------------------------
         '/stayDetail': (context) {
           final args =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<dynamic, dynamic>;
+          ModalRoute.of(context)!.settings.arguments
+          as Map<dynamic, dynamic>;
 
           return StayDetailScreen(stayData: Map<String, dynamic>.from(args));
         },
@@ -134,8 +158,8 @@ class MyApp extends StatelessWidget {
         //------------------------------------------------------------
         '/stayReview': (context) {
           final args =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<dynamic, dynamic>;
+          ModalRoute.of(context)!.settings.arguments
+          as Map<dynamic, dynamic>;
 
           return StayReviewScreen(
             stayName: args["stayName"],
@@ -154,8 +178,8 @@ class MyApp extends StatelessWidget {
         //------------------------------------------------------------
         '/stayRooms': (context) {
           final args =
-              ModalRoute.of(context)!.settings.arguments
-                  as Map<dynamic, dynamic>;
+          ModalRoute.of(context)!.settings.arguments
+          as Map<dynamic, dynamic>;
 
           return StayRoomListScreen(
             stayData: Map<String, dynamic>.from(args["stayData"]),
@@ -163,6 +187,22 @@ class MyApp extends StatelessWidget {
             people: args["people"],
           );
         },
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/near') {
+          final type = settings.arguments as ContentType;   // ← arguments 받음
+
+          return MaterialPageRoute(
+            builder: (context) => NearMapScreen(type: type),
+          );
+        }if (settings.name == '/staySearch') {
+          final type = settings.arguments as ContentType;
+
+          return MaterialPageRoute(
+            builder: (context) => StaySearchScreen(type: type),
+          );
+        }
+        return null;
       },
     );
   }
