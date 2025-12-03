@@ -19,8 +19,9 @@ class StayRoomListScreen extends StatelessWidget {
     final stayId = stayData["id"];
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("${stayData["name"]} 객실 목록"),
+        title: Text("${stayData["title"]} 객실 목록"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -28,8 +29,9 @@ class StayRoomListScreen extends StatelessWidget {
 
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
+            .collection("tourItems")
+            .doc(stayId)
             .collection("rooms")
-            .where("stayId", isEqualTo: stayId)
             .snapshots(),
 
         builder: (context, snapshot) {
@@ -37,7 +39,13 @@ class StayRoomListScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final rooms = snapshot.data!.docs;
+          final rooms = snapshot.data!.docs.toList();
+
+          rooms.sort((a, b) {
+            final priceA = a['price'] ?? 0;
+            final priceB = b['price'] ?? 0;
+            return priceA.compareTo(priceB);
+          });
 
           if (rooms.isEmpty) {
             return const Center(child: Text("등록된 객실이 없습니다."));
@@ -92,7 +100,7 @@ class StayRoomListScreen extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
-              data["images"][0],
+              data["roomImage"],
               width: 110,
               height: 110,
               fit: BoxFit.cover,
@@ -106,7 +114,7 @@ class StayRoomListScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data["name"],
+                  data["roomName"],
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,

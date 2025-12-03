@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'StayDetailScreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class StayListScreen extends StatefulWidget {
   final String location;
@@ -23,7 +24,7 @@ class _StayListScreenState extends State<StayListScreen> {
 
   List<String> selectedFilters = [];
   double minPrice = 0;
-  double maxPrice = 300000;
+  double maxPrice = 500000;
 
   late String selectedDate;
   late int selectedPeople;
@@ -33,6 +34,17 @@ class _StayListScreenState extends State<StayListScreen> {
     super.initState();
     selectedDate = widget.date;
     selectedPeople = widget.people;
+  }
+  String _getAcCodeFromLabel(String label) {
+    switch (label) {
+      case "호텔": return "AC01";
+      case "모텔": return "AC02";
+      case "펜션": return "AC03";
+      case "풀빌라": return "AC04";
+      case "리조트": return "AC05";
+      case "게스트 하우스" : return "AC06";
+      default: return "";
+    }
   }
 
   // ============================
@@ -47,6 +59,31 @@ class _StayListScreenState extends State<StayListScreen> {
         selectedPeople = result["people"] ?? selectedPeople;
       });
     }
+  }
+  Future<void> saveRecentStay(String contentId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final docRef = FirebaseFirestore.instance.collection("recentStays").doc(user.uid);
+
+    final docSnap = await docRef.get();
+
+    List<String> currentList = [];
+    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
+      currentList = List<String>.from(docSnap["contentIds"]);
+    }
+
+    // 중복 제거 & 맨 앞에 추가
+    currentList.remove(contentId);
+    currentList.insert(0, contentId);
+
+    // 최대 10개만 저장
+    if (currentList.length > 10) currentList = currentList.sublist(0, 10);
+    //await docRef.set({"contentIds": currentList});
+    if (docSnap.exists) {
+      await docRef.update({"contentIds": currentList}); // 기존 문서 있으면 update
+    } else {
+      await docRef.set({"contentIds": currentList}); // 없으면 새로 생성
+    }    print("최근 본 숙소 저장: $contentId");
   }
 
   // ============================
@@ -66,8 +103,8 @@ class _StayListScreenState extends State<StayListScreen> {
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
-                    .collection("stays")
-                    .where("location", isEqualTo: widget.location.trim())
+                    .collection("tourItems")
+                    .where("city", isEqualTo: widget.location.trim())
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
@@ -75,18 +112,15 @@ class _StayListScreenState extends State<StayListScreen> {
                   }
 
                   // Firestore 데이터 → List 복사
-                  List<QueryDocumentSnapshot> stays = snapshot.data!.docs
-                      .toList();
+                  List<QueryDocumentSnapshot> tourItems = snapshot.data!.docs.toList();
 
-                  // ==========================================
-                  // 🔥 Flutter 내부 필터링 (필터 / 가격)
-                  // ==========================================
-                  stays = stays.where((doc) {
+                  // 내부 필터링 (필터 / 가격)
+                  tourItems = tourItems.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
 
                     // 타입 필터
                     if (selectedFilters.isNotEmpty &&
-                        !selectedFilters.contains(data["type"])) {
+                        !selectedFilters.contains(data["lclsSystm2"]?.toString().trim())) {
                       return false;
                     }
 
@@ -100,45 +134,33 @@ class _StayListScreenState extends State<StayListScreen> {
                     return true;
                   }).toList();
 
-                  // ==========================================
-                  // 🔥 정렬 수행
-                  // ==========================================
-                  stays.sort((a, b) {
+                  // 정렬 수행
+                  tourItems.sort((a, b) {
                     final A = a.data() as Map<String, dynamic>;
                     final B = b.data() as Map<String, dynamic>;
 
                     switch (sortType) {
                       case "lowPrice":
-                        return (A["salePrice"] as num).compareTo(
-                          B["salePrice"] as num,
-                        );
+                        return (A["salePrice"] as num).compareTo(B["salePrice"] as num);
                       case "highPrice":
-                        return (B["salePrice"] as num).compareTo(
-                          A["salePrice"] as num,
-                        );
+                        return (B["salePrice"] as num).compareTo(A["salePrice"] as num);
                       case "review":
-                        return (B["review"] as num).compareTo(
-                          A["review"] as num,
-                        );
+                        return (B["review"] as num).compareTo(A["review"] as num);
                       default:
-                        return (B["rating"] as num).compareTo(
-                          A["rating"] as num,
-                        );
+                        return (B["rating"] as num).compareTo(A["rating"] as num);
                     }
                   });
 
-                  if (stays.isEmpty) {
+                  if (tourItems.isEmpty) {
                     return const Center(child: Text("해당 조건의 숙소가 없습니다."));
                   }
 
-                  // ==========================================
-                  // 🔥 리스트 출력
-                  // ==========================================
+                  // 리스트 출력
                   return ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: stays.length,
+                    itemCount: tourItems.length,
                     itemBuilder: (context, index) {
-                      final data = stays[index].data() as Map<String, dynamic>;
+                      final data = tourItems[index].data() as Map<String, dynamic>;
 
                       return GestureDetector(
                         onTap: () async {
@@ -147,7 +169,7 @@ class _StayListScreenState extends State<StayListScreen> {
                             MaterialPageRoute(
                               builder: (_) => StayDetailScreen(
                                 stayData: {
-                                  "id": stays[index].id,
+                                  "id": tourItems[index].id,
                                   ...data,
                                   "date": selectedDate,
                                   "people": selectedPeople,
@@ -159,10 +181,10 @@ class _StayListScreenState extends State<StayListScreen> {
                           if (result != null && result is Map) {
                             setState(() {
                               selectedDate = result["date"] ?? selectedDate;
-                              selectedPeople =
-                                  result["people"] ?? selectedPeople;
+                              selectedPeople = result["people"] ?? selectedPeople;
                             });
                           }
+                          await saveRecentStay(tourItems[index].id);
                         },
                         child: _stayItem(data),
                       );
@@ -327,6 +349,7 @@ class _StayListScreenState extends State<StayListScreen> {
                       _filterChip("펜션", setModal),
                       _filterChip("풀빌라", setModal),
                       _filterChip("리조트", setModal),
+                      _filterChip("게스트 하우스", setModal),
                     ],
                   ),
 
@@ -372,26 +395,29 @@ class _StayListScreenState extends State<StayListScreen> {
     );
   }
 
+  // 🔹 FilterChip 수정
   Widget _filterChip(String label, Function(void Function()) setModal) {
     return FilterChip(
       label: Text(label),
-      selected: selectedFilters.contains(label),
+      selected: selectedFilters.contains(_getAcCodeFromLabel(label)),
       onSelected: (value) {
         setModal(() {
+          String acCode = _getAcCodeFromLabel(label);
           if (value) {
-            selectedFilters.add(label);
+            selectedFilters.add(acCode);
           } else {
-            selectedFilters.remove(label);
+            selectedFilters.remove(acCode);
           }
         });
       },
     );
   }
 
+
   // ============================
   // 🔥 숙소 아이템 UI
   // ============================
-  Widget _stayItem(Map stay) {
+  Widget _stayItem(Map item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -400,7 +426,7 @@ class _StayListScreenState extends State<StayListScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: Image.network(
-              stay["images"][0],
+              item["firstimage"],
               width: 120,
               height: 120,
               fit: BoxFit.cover,
@@ -420,7 +446,7 @@ class _StayListScreenState extends State<StayListScreen> {
                 _badge("이번주특가"),
                 const SizedBox(height: 6),
                 Text(
-                  stay["name"],
+                  item["title"],
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -432,7 +458,7 @@ class _StayListScreenState extends State<StayListScreen> {
                     const Icon(Icons.location_on, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      stay["location"],
+                      item["city"],
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black54,
@@ -446,7 +472,7 @@ class _StayListScreenState extends State<StayListScreen> {
                     const Icon(Icons.star, size: 16, color: Color(0xFFFFB800)),
                     const SizedBox(width: 4),
                     Text(
-                      "${stay["rating"]} (${stay["review"]})",
+                      "${item["rating"]} (${item["review"]})",
                       style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black87,
@@ -458,7 +484,7 @@ class _StayListScreenState extends State<StayListScreen> {
                 Row(
                   children: [
                     Text(
-                      "${stay["price"]}원",
+                      "${item["price"]}원",
                       style: const TextStyle(
                         decoration: TextDecoration.lineThrough,
                         color: Colors.grey,
@@ -473,7 +499,7 @@ class _StayListScreenState extends State<StayListScreen> {
                   ],
                 ),
                 Text(
-                  "${stay["salePrice"]}원~",
+                  "${item["salePrice"]}원~",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
