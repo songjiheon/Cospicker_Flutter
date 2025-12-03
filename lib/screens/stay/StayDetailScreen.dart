@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'StayDatePeopleScreen.dart';
 import 'StayReviewScreen.dart';
-import 'StayRoomListScreen.dart'; // ⭐ 객실 보기 화면 추가
+import 'StayRoomListScreen.dart'; //
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 
 class StayDetailScreen extends StatefulWidget {
   final Map<String, dynamic> stayData;
@@ -98,7 +100,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------------------- 이미지 -------------------------------
   Widget _imageHeader() {
-    final images = widget.stayData["images"] ?? [];
+    final images = widget.stayData["roomImage"] ?? [];
 
     return SizedBox(
       height: 280,
@@ -108,7 +110,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
             itemCount: images.length,
             itemBuilder: (_, i) {
               return Image.network(
-                images[i],
+                images,
                 width: double.infinity,
                 height: 280,
                 fit: BoxFit.cover,
@@ -168,7 +170,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.stayData["name"] ?? "",
+            widget.stayData["title"] ?? "",
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
@@ -177,16 +179,16 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
             children: [
               const Icon(Icons.location_on, size: 16),
               const SizedBox(width: 4),
-              Text(widget.stayData["location"] ?? ""),
+              Text(widget.stayData["addr1"] ?? ""),
             ],
           ),
 
           const SizedBox(height: 6),
           Row(
-            children: const [
+            children: [
               Icon(Icons.phone, size: 16),
               SizedBox(width: 4),
-              Text("02-1234-5678"),
+              Text(widget.stayData["tel"] ?? ""),
             ],
           ),
         ],
@@ -330,6 +332,13 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------------------- 지도 -------------------------------
   Widget _mapSection() {
+    // Firestore에서 가져온 mapy(map 위도)와 mapx(map 경도)
+    final lat = double.tryParse(widget.stayData["mapy"] ?? "0") ?? 0;
+    final lng = double.tryParse(widget.stayData["mapx"] ?? "0") ?? 0;
+    final LatLng position = LatLng(lat, lng);
+    print(lat);
+    print(lng);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -340,21 +349,33 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-
-          Container(
+          SizedBox(
             height: 180,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Icon(Icons.map, size: 70, color: Colors.white),
+            child: GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: position,
+                zoom: 16,
+              ),
+              markers: {
+                Marker(
+                  markerId: MarkerId(widget.stayData["contentid"]),
+                  position: position,
+                  infoWindow: InfoWindow(
+                    title: widget.stayData["title"] ?? "",
+                    snippet: widget.stayData["addr1"] ?? "",
+                  ),
+                ),
+              },
+              zoomControlsEnabled: false,
+              myLocationEnabled: false,
+              mapType: MapType.normal,
             ),
           ),
         ],
       ),
     );
   }
+
 
   // ------------------------------- 상세 설명 -------------------------------
   Widget _detailInfoSection() {
