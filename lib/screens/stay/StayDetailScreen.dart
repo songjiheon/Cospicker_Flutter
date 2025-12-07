@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'StayDatePeopleScreen.dart';
 import 'StayReviewScreen.dart';
-import 'StayRoomListScreen.dart'; //
+import 'StayRoomListScreen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 
 class StayDetailScreen extends StatefulWidget {
   final Map<String, dynamic> stayData;
@@ -18,6 +19,87 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
   String dateRange = "12.3 - 12.5";
   int people = 2;
 
+  bool isWished = false; // ❤️ 찜 여부
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIsWished();
+  }
+
+  // ------------------ 찜 여부 확인 ------------------
+  Future<void> _checkIsWished() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final snap = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("wish_stay_all") // ⭐ 전체 저장되는 통합 폴더
+        .doc(widget.stayData["contentid"].toString())
+        .get();
+
+    setState(() {
+      isWished = snap.exists;
+    });
+  }
+
+  // ------------------ 찜 저장 ------------------
+  Future<void> _saveStayGlobal() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("wish_stay_all")
+        .doc(widget.stayData["contentid"])
+        .set({
+      "title": widget.stayData["title"],
+      "image": widget.stayData["firstimage"] ?? "",
+      "addr": widget.stayData["addr1"] ?? "",
+      "rating": widget.stayData["rating"] ?? 0,
+      "contentid": widget.stayData["contentid"],
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+
+    setState(() {
+      isWished = true;
+    });
+  }
+
+  // ------------------ 찜 삭제 ------------------
+  Future<void> _removeStayGlobal() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("wish_stay_all")
+        .doc(widget.stayData["contentid"])
+        .delete();
+
+    setState(() {
+      isWished = false;
+    });
+  }
+
+  // ------------------ roomImage 안전 파싱 ------------------
+  List<String> _parseImageList(dynamic raw) {
+    if (raw is List) {
+      return raw.map((e) => e.toString()).toList();
+    }
+    if (raw is String && raw.isNotEmpty) {
+      return [raw];
+    }
+    return [];
+  }
+
+  // ------------------ reviewImages 파싱 ------------------
+  List<String> _parseReviewImages(dynamic raw) {
+    if (raw is List) return List<String>.from(raw);
+    return [];
+  }
+
+  // 뒤로가기 전달
   void _popWithResult() {
     Navigator.pop(context, {"date": dateRange, "people": people});
   }
@@ -31,46 +113,10 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.white,
-
-        // -------------------- 하단 버튼 --------------------
-        bottomNavigationBar: Container(
-          padding: const EdgeInsets.all(16),
-          child: SizedBox(
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4A6DFF),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-
-              // ⭐ 모든 객실 보기 화면 이동!
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => StayRoomListScreen(
-                      stayData: widget.stayData,
-                      date: dateRange,
-                      people: people,
-                    ),
-                  ),
-                );
-              },
-
-              child: const Text(
-                "모든 객실 보기",
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ),
-
+        bottomNavigationBar: _bottomButton(),
         body: Column(
           children: [
             _imageHeader(),
-
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -80,14 +126,11 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
                     _reviewSection(context),
                     _datePeopleSection(context),
                     _facilitySection(),
-
-                    const SizedBox(height: 10),
-
+                    SizedBox(height: 10),
                     _mapSection(),
-                    const SizedBox(height: 20),
-
+                    SizedBox(height: 20),
                     _detailInfoSection(),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -98,54 +141,104 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
     );
   }
 
-  // ------------------------------- 이미지 -------------------------------
+  // ------------------------------- 하단 버튼 -------------------------------
+  Widget _bottomButton() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: SizedBox(
+        height: 52,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF4A6DFF),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => StayRoomListScreen(
+                  stayData: widget.stayData,
+                  date: dateRange,
+                  people: people,
+                ),
+              ),
+            );
+          },
+          child: Text(
+            "모든 객실 보기",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ------------------------------- 이미지 헤더 -------------------------------
   Widget _imageHeader() {
-    final images = widget.stayData["roomImage"] ?? [];
+    final images = _parseImageList(widget.stayData["roomImage"]);
 
     return SizedBox(
       height: 280,
       child: Stack(
         children: [
-          PageView.builder(
+          (images.isEmpty)
+              ? Container(
+            color: Colors.grey.shade300,
+            child: Center(child: Icon(Icons.broken_image, size: 70)),
+          )
+              : PageView.builder(
             itemCount: images.length,
             itemBuilder: (_, i) {
               return Image.network(
-                images,
+                images[i],
                 width: double.infinity,
                 height: 280,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 280,
-                  color: Colors.grey.shade300,
-                  child: const Center(
-                    child: Icon(Icons.broken_image, size: 60),
-                  ),
-                ),
               );
             },
           ),
 
+          // 뒤로가기
           Positioned(
             top: 40,
             left: 16,
             child: _circleButton(Icons.arrow_back_ios_new, _popWithResult),
           ),
 
+          // 찜 버튼 ❤️
           Positioned(
             top: 40,
             right: 16,
-            child: _circleButton(Icons.favorite_border, () {}),
+            child: _circleButton(
+              isWished ? Icons.favorite : Icons.favorite_border,
+                  () async {
+                if (isWished) {
+                  // 찜 취소
+                  bool confirm = await _showRemoveDialog();
+                  if (confirm) {
+                    await _removeStayGlobal();
+                  }
+                } else {
+                  // 찜 추가 → 폴더 선택
+                  _openStayWishFolder();
+                }
+              },
+              activeColor: isWished ? Colors.red : Colors.black87,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _circleButton(IconData icon, VoidCallback onTap) {
+  Widget _circleButton(IconData icon, VoidCallback onTap,
+      {Color activeColor = Colors.black87}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(9),
+        padding: EdgeInsets.all(9),
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
@@ -153,37 +246,151 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 6,
-              offset: const Offset(0, 3),
+              offset: Offset(0, 3),
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.black87, size: 18),
+        child: Icon(icon, color: activeColor, size: 20),
       ),
     );
+  }
+
+  // ------------------------------------------------------
+  // 찜 취소 Dialog
+  // ------------------------------------------------------
+  Future<bool> _showRemoveDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("찜 취소"),
+        content: Text("이 숙소를 찜에서 제거할까요?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("아니요"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text("네"),
+          ),
+        ],
+      ),
+    ) ??
+        false;
+  }
+
+  // ------------------------------------------------------
+  // 위시 폴더 선택 BottomSheet
+  // ------------------------------------------------------
+  void _openStayWishFolder() {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SizedBox(
+          height: 330,
+          child: Column(
+            children: [
+              SizedBox(height: 14),
+              Text("숙소 폴더 선택",
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
+
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("users")
+                      .doc(uid)
+                      .collection("wish_stay")
+                      .orderBy("createdAt")
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    final docs = snapshot.data!.docs;
+
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          "숙소 위시 폴더가 없습니다.\n위시 리스트 화면에서 폴더를 생성해주세요.",
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: docs.length,
+                      itemBuilder: (_, index) {
+                        final folderData =
+                        docs[index].data() as Map<String, dynamic>;
+                        final folderId = docs[index].id;
+
+                        return ListTile(
+                          title: Text(folderData["name"] ?? "이름 없음"),
+                          onTap: () async {
+                            await _saveStayGlobal(); // 전체 목록에 저장
+                            await _saveStayToFolder(folderId); // 선택한 폴더에도 저장
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ------------------------- 선택한 폴더에 저장 -------------------------
+  Future<void> _saveStayToFolder(String folderId) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .collection("wish_stay")
+        .doc(folderId)
+        .collection("items")
+        .doc(widget.stayData["contentid"])
+        .set({
+      "title": widget.stayData["title"],
+      "image": widget.stayData["firstimage"] ?? "",
+      "addr": widget.stayData["addr1"] ?? "",
+      "rating": widget.stayData["rating"] ?? 0,
+      "contentid": widget.stayData["contentid"],
+      "type": "stay",
+      "createdAt": FieldValue.serverTimestamp(),
+    });
   }
 
   // ------------------------------- 제목 -------------------------------
   Widget _titleSection() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.stayData["title"] ?? "",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-
+          Text(widget.stayData["title"] ?? "",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.location_on, size: 16),
-              const SizedBox(width: 4),
+              Icon(Icons.location_on, size: 16),
+              SizedBox(width: 4),
               Text(widget.stayData["addr1"] ?? ""),
             ],
           ),
-
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Row(
             children: [
               Icon(Icons.phone, size: 16),
@@ -196,52 +403,45 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
     );
   }
 
-  // ------------------------------- 리뷰 -------------------------------
+  // ------------------------------- 리뷰 요약 -------------------------------
   Widget _reviewSection(BuildContext context) {
+    final reviewImages = _parseReviewImages(widget.stayData["reviewImages"]);
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      color: const Color(0xFFF7F7F7),
+      padding: EdgeInsets.all(16),
+      color: Color(0xFFF7F7F7),
       child: Column(
         children: [
           Row(
             children: [
-              const Icon(Icons.star, color: Colors.amber),
-              const SizedBox(width: 4),
-              Text(
-                "${widget.stayData['rating']} (${widget.stayData['review']})",
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
+              Icon(Icons.star, color: Colors.amber),
+              SizedBox(width: 4),
+              Text("${widget.stayData['rating']} (${widget.stayData['review']})",
+                  style: TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w600)),
+              Spacer(),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => StayReviewScreen(
-                        stayName: widget.stayData["name"],
-                        rating: widget.stayData["rating"] * 1.0,
-                        reviewImages: List<String>.from(
-                          widget.stayData["reviewImages"] ?? [],
-                        ),
+                        stayName: widget.stayData["title"] ?? "",
+                        rating:
+                        (widget.stayData["rating"] ?? 0) * 1.0,
+                        reviewImages: reviewImages,
                       ),
                     ),
                   );
                 },
-                child: const Text(
-                  "전체보기 >",
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
+                child: Text("전체보기 >",
+                    style: TextStyle(color: Colors.grey, fontSize: 13)),
               ),
             ],
           ),
-
-          const SizedBox(height: 12),
-
+          SizedBox(height: 12),
           Row(
-            children: const [
+            children: [
               Expanded(child: _ReviewBox()),
               SizedBox(width: 12),
               Expanded(child: _ReviewBox()),
@@ -258,7 +458,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
       onTap: () async {
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const StayDatePeopleScreen()),
+          MaterialPageRoute(builder: (_) => StayDatePeopleScreen()),
         );
 
         if (result != null) {
@@ -269,21 +469,21 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
         }
       },
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            color: const Color(0xFFF1F1F1),
+            color: Color(0xFFF1F1F1),
           ),
           child: Row(
             children: [
-              const Icon(Icons.calendar_month, size: 18),
-              const SizedBox(width: 10),
+              Icon(Icons.calendar_month, size: 18),
+              SizedBox(width: 10),
               Text(dateRange),
-              const Spacer(),
-              const Icon(Icons.people_alt_outlined),
-              const SizedBox(width: 6),
+              Spacer(),
+              Icon(Icons.people_alt_outlined),
+              SizedBox(width: 6),
               Text("$people명"),
             ],
           ),
@@ -303,28 +503,26 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "편의시설 및 서비스",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
+          Text("편의시설 및 서비스",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: items.map((e) {
               return Column(
                 children: [
                   Icon(e["icon"] as IconData, size: 32),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text(e["text"] as String),
                 ],
               );
             }).toList(),
           ),
+
         ],
       ),
     );
@@ -332,43 +530,31 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------------------- 지도 -------------------------------
   Widget _mapSection() {
-    // Firestore에서 가져온 mapy(map 위도)와 mapx(map 경도)
-    final lat = double.tryParse(widget.stayData["mapy"] ?? "0") ?? 0;
-    final lng = double.tryParse(widget.stayData["mapx"] ?? "0") ?? 0;
-    final LatLng position = LatLng(lat, lng);
-    print(lat);
-    print(lng);
+    final lat = double.tryParse(widget.stayData["mapy"].toString()) ?? 0;
+    final lng = double.tryParse(widget.stayData["mapx"].toString()) ?? 0;
+
+    final LatLng pos = LatLng(lat, lng);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "위치",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
+          Text("위치",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
           SizedBox(
             height: 180,
             child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: position,
-                zoom: 16,
-              ),
+              initialCameraPosition:
+              CameraPosition(target: pos, zoom: 16),
               markers: {
                 Marker(
                   markerId: MarkerId(widget.stayData["contentid"]),
-                  position: position,
-                  infoWindow: InfoWindow(
-                    title: widget.stayData["title"] ?? "",
-                    snippet: widget.stayData["addr1"] ?? "",
-                  ),
+                  position: pos,
                 ),
               },
               zoomControlsEnabled: false,
-              myLocationEnabled: false,
-              mapType: MapType.normal,
             ),
           ),
         ],
@@ -376,30 +562,25 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
     );
   }
 
-
   // ------------------------------- 상세 설명 -------------------------------
   Widget _detailInfoSection() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "숙소 상세 설명",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          Text(
-            widget.stayData["description"] ?? "상세 정보가 없습니다.",
-            style: const TextStyle(fontSize: 14, height: 1.6),
-          ),
+          Text("숙소 상세 설명",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
+          Text(widget.stayData["description"] ?? "상세 정보가 없습니다.",
+              style: TextStyle(fontSize: 14, height: 1.6)),
         ],
       ),
     );
   }
 }
 
+// ------------------- 리뷰 UI 박스 -------------------
 class _ReviewBox extends StatelessWidget {
   const _ReviewBox({super.key});
 
@@ -407,12 +588,13 @@ class _ReviewBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 110,
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: const Text("숙소가 깔끔하고 조용해서 좋았어요!", style: TextStyle(fontSize: 13)),
+      child: Text("숙소가 깔끔하고 조용해서 좋았어요!",
+          style: TextStyle(fontSize: 13)),
     );
   }
 }

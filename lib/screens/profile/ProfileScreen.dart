@@ -326,26 +326,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// 아래 메뉴 아이템
-Widget _bottomItem(BuildContext context,String label, String asset) {
+// 하단 네비게이션
+Widget _bottomItem(BuildContext context, String label, String asset) {
   return InkWell(
     onTap: () {
-      if(label=="프로필"){
-        Navigator.pushNamed(context, '/profile');
-      }else if(label=="홈"){
-        Navigator.pushNamed(context, '/home');
+      switch (label) {
+        case "홈":
+          Navigator.pushNamed(context, '/home');
+          break;
+
+        case "위시":
+          Navigator.pushNamed(context, '/wishList');   // 🔥 수정됨
+          break;
+
+        case "주변":
+          Navigator.pushNamed(context, '/near');
+          break;
+
+        case "메시지":
+          Navigator.pushNamed(context, '/chatRoomList');
+          break;
+
+        case "프로필":
+          Navigator.pushNamed(context, '/profile');
+          break;
       }
     },
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Image.asset(asset, width: 28, height: 28),
-        SizedBox(height: 3),
-        Text(label, style: TextStyle(fontSize: 12)),
+        Image.asset(asset, width: 28),
+        const SizedBox(height: 3),
+        Text(label, style: const TextStyle(fontSize: 12)),
       ],
     ),
   );
 }
-
-
 

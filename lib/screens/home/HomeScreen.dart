@@ -7,28 +7,36 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'package:geocoding/geocoding.dart';
-
-
-
+import 'package:cospicker/models/content_type.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+  @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware{
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   String userName = "";
+
+  // 주변 숙소 / 주변 맛집
   List<dynamic> _nearAccommodations = [];
   List<dynamic> _nearRestaurants = [];
-  final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
-
 
   bool _loadingAccommodations = true;
   bool _loadingRestaurants = true;
 
+  // 최근 본 숙소 / 최근 본 맛집
   List<Map<String, dynamic>> _recentStays = [];
-  bool _loadingRecentStays = true;
+  List<Map<String, dynamic>> _recentRestaurants = [];
 
+  bool _loadingRecentStays = true;
+  bool _loadingRecentRestaurants = true;
+
+  final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
@@ -40,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -49,14 +58,16 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     _initLoad();
   }
 
+  // 뒤에서 돌아올 때 최신 데이터 갱신
   @override
   void didPopNext() {
-    _loadRecentStays(); // 최근 본 숙소 갱신
+    _loadRecentStays();
+    _loadRecentRestaurants();
   }
 
-  // -------------------------
-  //  1. 서울특별시 → 서울 변환
-  // -------------------------
+  // ================================
+  //  도시명 표준화 ("서울특별시" → "서울")
+  // ================================
   String normalizeCityName(String? name) {
     if (name == null) return "Unknown";
 
@@ -75,57 +86,93 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     return map[name] ?? name.replaceAll("특별시", "").replaceAll("광역시", "");
   }
 
-  //최근 본 숙소에 저장
+  // ========================================
+  // 최근 본 숙소 저장
+  // ========================================
   Future<void> saveRecentStay(String contentId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final docRef = FirebaseFirestore.instance.collection("recentStays").doc(user.uid);
+
+    final docRef =
+    FirebaseFirestore.instance.collection("recentStays").doc(user.uid);
 
     final docSnap = await docRef.get();
 
-    List<String> currentList = [];
+    List<String> list = [];
     if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
-      currentList = List<String>.from(docSnap["contentIds"]);
+      list = List<String>.from(docSnap["contentIds"]);
     }
 
-    // 중복 제거 & 맨 앞에 추가
-    currentList.remove(contentId);
-    currentList.insert(0, contentId);
+    list.remove(contentId);
+    list.insert(0, contentId);
 
-    // 최대 10개만 저장
-    if (currentList.length > 10) currentList = currentList.sublist(0, 10);
-    //await docRef.set({"contentIds": currentList});
+    if (list.length > 10) list = list.sublist(0, 10);
+
     if (docSnap.exists) {
-      await docRef.update({"contentIds": currentList}); // 기존 문서 있으면 update
+      await docRef.update({"contentIds": list});
     } else {
-      await docRef.set({"contentIds": currentList}); // 없으면 새로 생성
-    }    print("최근 본 숙소 저장: $contentId");
+      await docRef.set({"contentIds": list});
+    }
   }
-  // -------------------------
+
+  // ========================================
+  // 최근 본 맛집 저장
+  // ========================================
+  Future<void> saveRecentRestaurant(String contentId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final docRef =
+    FirebaseFirestore.instance.collection("recentRestaurants").doc(user.uid);
+
+    final docSnap = await docRef.get();
+
+    List<String> list = [];
+    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
+      list = List<String>.from(docSnap["contentIds"]);
+    }
+
+    list.remove(contentId);
+    list.insert(0, contentId);
+
+    if (list.length > 10) list = list.sublist(0, 10);
+
+    if (docSnap.exists) {
+      await docRef.update({"contentIds": list});
+    } else {
+      await docRef.set({"contentIds": list});
+    }
+  }
+
+  // ========================================
   // 초기 로딩
-  // -------------------------
+  // ========================================
   Future<void> _initLoad() async {
     setState(() {
       _loadingAccommodations = true;
       _loadingRestaurants = true;
       _loadingRecentStays = true;
+      _loadingRecentRestaurants = true;
     });
 
-    // 위치 단 1번
     final position = await _determinePosition();
     if (position == null) return;
 
-    final cityRaw = await _getCityFromLatLng(position.latitude, position.longitude);
+    final cityRaw =
+    await _getCityFromLatLng(position.latitude, position.longitude);
     final city = normalizeCityName(cityRaw);
 
     await Future.wait([
       _loadNearbyAccommodations(position, city),
       _loadNearbyRestaurants(position, city),
       _loadRecentStays(),
+      _loadRecentRestaurants(),
     ]);
   }
 
-  // 위치 → 행정구역명 찾기
+  // ========================================
+  // 위경도 → 도시명
+  // ========================================
   Future<String> _getCityFromLatLng(double lat, double lng) async {
     try {
       final placemarks = await placemarkFromCoordinates(lat, lng);
@@ -137,174 +184,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     }
   }
 
-  // -------------------------
-  Future<void> saveRestaurantItemsToFirestore(List<dynamic> items, String location) async {
-    final batch = FirebaseFirestore.instance.batch();
-    final random = Random();
-
-    final descriptions = [
-      "신선한 재료와 정성 가득한 조리로 많은 이들이 찾는 인기 맛집입니다.",
-      "현지인들에게 사랑받는 곳으로, 깊은 풍미와 정직한 맛이 특징입니다.",
-      "깔끔한 맛과 푸짐한 양으로 누구나 만족할 만한 식사를 제공합니다.",
-      "편안한 분위기에서 다양한 메뉴를 즐길 수 있는 곳입니다.",
-      "특별한 조리법으로 재료 본연의 풍미를 살린 요리를 선보입니다.",
-      "가성비 좋고 맛있는 음식으로 꾸준히 호평받고 있는 식당입니다.",
-      "담백하고 자극적이지 않은 맛으로 남녀노소 모두에게 추천합니다.",
-      "트렌디한 감성과 맛을 함께 느낄 수 있는 인기 있는 음식점입니다.",
-      "정갈한 음식과 친절한 서비스로 재방문율이 높은 맛집입니다.",
-      "풍부한 향과 깔끔한 뒷맛을 자랑하며 많은 여행객들이 찾는 명소입니다.",
-    ];
-
-
-    for (var item in items) {
-      final docRef = FirebaseFirestore.instance
-          .collection("restaurantItems")
-          .doc(item["contentid"]);
-
-      int price = (5000 + random.nextInt(20000)); // 일반 음식 평균 가격대
-      double rating = (30 + random.nextInt(21)) / 10.0;
-      int review = random.nextInt(2000);
-
-      final newItem = Map<String, dynamic>.from(item);
-      newItem.addAll({
-        "city": location,
-        "avgPrice": price,
-        "rating": rating,
-        "review": review,
-        "description": descriptions[random.nextInt(descriptions.length)],
-      });
-
-      batch.set(docRef, newItem);
-    }
-
-    await batch.commit();
-  }
-
-  Future<void> saveTourItemsToFirestore(List<dynamic> items, String location) async {
-    final batch = FirebaseFirestore.instance.batch();
-    final random = Random();
-
-    // 미리 기존 문서 체크 → batch 내부에서는 GET 금지(속도 ↑)
-    final existingIds = await _getExistingTourItemIds(items);
-
-    print("📌 기존 문서 ${existingIds.length}개 발견 → 스킵 중");
-
-    final roomImages = [
-      "https://cdn.pixabay.com/photo/2020/10/18/09/16/bedroom-5664221_1280.jpg",
-      "https://cdn.pixabay.com/photo/2018/06/14/21/15/bedroom-3475656_1280.jpg",
-      "https://cdn.pixabay.com/photo/2020/02/01/06/12/living-room-4809587_640.jpg",
-      "https://cdn.pixabay.com/photo/2021/12/18/06/13/hotel-6878058_640.jpg",
-      "https://cdn.pixabay.com/photo/2016/06/10/01/05/hotel-room-1447201_640.jpg",
-      "https://cdn.pixabay.com/photo/2015/01/16/11/19/hotel-601327_640.jpg",
-      "https://cdn.pixabay.com/photo/2020/01/23/02/42/bedroom-4786791_640.jpg",
-      "https://cdn.pixabay.com/photo/2014/09/25/18/05/bedroom-460762_640.jpg",
-      "https://cdn.pixabay.com/photo/2020/05/14/16/51/bed-5170531_640.jpg",
-      "https://cdn.pixabay.com/photo/2020/06/24/17/47/room-5337097_640.jpg",
-    ];
-
-    final descriptions = [
-      "편안한 휴식을 위한 최적의 공간을 제공합니다.",
-      "여행객에게 사랑받는 가성비 최고의 숙소입니다.",
-      "깨끗한 객실과 친절한 서비스로 만족도를 높였습니다.",
-      "여유로운 분위기에서 힐링할 수 있는 공간입니다.",
-      "모던한 인테리어와 넓은 객실이 특징입니다.",
-      "가족, 커플 여행객 모두에게 추천하는 숙소입니다.",
-      "넓고 쾌적한 침구로 편안한 밤을 보장합니다.",
-      "실내외 시설이 잘 갖춰져 있어 만족도가 높은 숙소입니다.",
-    ];
-
-    for (var item in items) {
-      final id = item["contentid"]?.toString();
-      if (id == null) continue;
-
-      if (existingIds.contains(id)) continue;
-
-      final docRef = FirebaseFirestore.instance.collection("tourItems").doc(id);
-
-      int price = (10 * (10 + random.nextInt(41))) * 1000;
-      int salePrice = (price * 0.8 / 1000).round() * 1000;
-      int review = random.nextInt(501);
-      double rating = (30 + random.nextInt(21)) / 10.0;
-
-      String mainRoomImage = roomImages[random.nextInt(roomImages.length)];
-
-      final newItem = Map<String, dynamic>.from(item);
-      newItem.addAll({
-        "city": location.trim(),
-        "price": price,
-        "salePrice": salePrice,
-        "rating": rating,
-        "review": review,
-        "roomImage": mainRoomImage,
-        "description": descriptions[random.nextInt(descriptions.length)],
-      });
-
-      batch.set(docRef, newItem);
-
-      // 룸 타입 랜덤 생성
-      final roomTypes = ["스탠다드 룸"];
-      if (random.nextBool()) roomTypes.add("디럭스 룸");
-      if (random.nextBool()) roomTypes.add("스위트 룸");
-
-      for (var roomType in roomTypes) {
-        final roomRef = docRef.collection("rooms").doc();
-
-        int roomPrice = price;
-        if (roomType == "디럭스 룸") roomPrice = (price * 1.5).round();
-        if (roomType == "스위트 룸") roomPrice = (price * 2).round();
-
-        batch.set(roomRef, {
-          "roomName": roomType,
-          "price": roomPrice,
-          "salePrice": (roomPrice * 0.8 / 1000).round() * 1000,
-          "roomImage": roomImages[random.nextInt(roomImages.length)],
-          "standard": 2,
-          "max": 2 + random.nextInt(3),
-        });
-      }
-    }
-
-    await batch.commit();
-    print("🔥 Firestore 저장 완료");
-  }
-
-  // 기존 문서들 한 번에 가져오기 (중복 방지 + batch 속도 ↑)
-  Future<Set<String>> _getExistingTourItemIds(List<dynamic> items) async {
-    final ids = items.map((e) => e["contentid"].toString()).toList();
-
-    final qs = await FirebaseFirestore.instance
-        .collection("tourItems")
-        .where(FieldPath.documentId, whereIn: ids.length > 10 ? ids.take(10).toList() : ids)
-        .get();
-
-    // whereIn 10개 제한 → 루프 처리
-    final existing = <String>{};
-    existing.addAll(qs.docs.map((e) => e.id));
-
-    if (ids.length > 10) {
-      for (var chunk in _chunkList(ids.skip(10).toList(), 10)) {
-        final res = await FirebaseFirestore.instance
-            .collection("tourItems")
-            .where(FieldPath.documentId, whereIn: chunk)
-            .get();
-        existing.addAll(res.docs.map((e) => e.id));
-      }
-    }
-
-    return existing;
-  }
-
-  List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
-    List<List<T>> chunks = [];
-    for (var i = 0; i < list.length; i += chunkSize) {
-      chunks.add(list.sublist(i, i + chunkSize > list.length ? list.length : i + chunkSize));
-    }
-    return chunks;
-  }
-
-  // -------------------------
-  // 최근 본 숙소
-  // -------------------------
+  // ========================================
+  // 최근 본 숙소 불러오기
+  // ========================================
   Future<void> _loadRecentStays() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -323,44 +205,100 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     }
 
     final List<dynamic> contentIds = doc["contentIds"];
+
     final futures = contentIds.map((id) async {
-      final stayDoc = await FirebaseFirestore.instance.collection("tourItems").doc(id.toString()).get();
+      final stayDoc =
+      await FirebaseFirestore.instance.collection("tourItems").doc(id).get();
+
       if (stayDoc.exists && stayDoc.data() != null) {
         return stayDoc.data() as Map<String, dynamic>;
       }
       return null;
-    }).toList();
+    });
 
     final results = await Future.wait(futures);
-    final stays = results.whereType<Map<String, dynamic>>().toList();
-
     setState(() {
-      _recentStays = stays;
+      _recentStays = results.whereType<Map<String, dynamic>>().toList();
       _loadingRecentStays = false;
     });
   }
 
-  // 위치 가져오기
+  // ========================================
+  // 최근 본 맛집 불러오기
+  // ========================================
+  Future<void> _loadRecentRestaurants() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection("recentRestaurants")
+        .doc(user.uid)
+        .get();
+
+    if (!doc.exists || !doc.data()!.containsKey("contentIds")) {
+      setState(() {
+        _recentRestaurants = [];
+        _loadingRecentRestaurants = false;
+      });
+      return;
+    }
+
+    final List<dynamic> contentIds = doc["contentIds"];
+
+    final futures = contentIds.map((id) async {
+      final rDoc = await FirebaseFirestore.instance
+          .collection("restaurantItems")
+          .doc(id)
+          .get();
+
+      if (rDoc.exists && rDoc.data() != null) {
+        return rDoc.data() as Map<String, dynamic>;
+      }
+      return null;
+    });
+
+    final results = await Future.wait(futures);
+    setState(() {
+      _recentRestaurants = results.whereType<Map<String, dynamic>>().toList();
+      _loadingRecentRestaurants = false;
+    });
+  }
+
+  // ==========================================================
+  // 위치 권한 확인 + 현재 위치 가져오기
+  // ==========================================================
   Future<Position?> _determinePosition() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        print("위치 권한 없음");
         return null;
       }
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
     } catch (e) {
       print("위치 가져오기 실패: $e");
       return null;
     }
   }
 
-  // API 불러오기
-  Future<List<dynamic>> _fetchNearbyItems(double lat, double lng, int contentTypeId) async {
-    final serviceKey = "투어api";
-    print(serviceKey);
+  // ==========================================================
+  // Tour API 호출 (숙소/맛집 공통)
+  // ==========================================================
+  Future<List<dynamic>> _fetchNearbyItems(
+      double lat,
+      double lng,
+      int contentTypeId, // 32 = 숙소, 39 = 맛집
+      ) async {
+    const serviceKey =
+        "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
+
     final url = Uri.parse(
       "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
           "?serviceKey=$serviceKey"
@@ -387,82 +325,139 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
       final itemData = items["item"];
       if (itemData is List) return itemData;
       if (itemData is Map) return [itemData];
+
       return [];
     } catch (e) {
-      print("TourAPI 오류: $e");
+      print("Tour API 오류: $e");
       return [];
     }
   }
 
-  // 숙소 로딩
+  // ==========================================================
+  // 주변 숙소 로드 & Firestore 저장
+  // ==========================================================
   Future<void> _loadNearbyAccommodations(Position pos, String city) async {
     setState(() => _loadingAccommodations = true);
 
     final rawList = await _fetchNearbyItems(pos.latitude, pos.longitude, 32);
-    final filtered = rawList.where((item) => item['firstimage'] != null && item['firstimage'].toString().isNotEmpty).toList();
+
+    final filtered = rawList
+        .where((item) =>
+    item["firstimage"] != null &&
+        item["firstimage"].toString().isNotEmpty)
+        .toList();
 
     setState(() {
       _nearAccommodations = filtered;
       _loadingAccommodations = false;
     });
 
-    await saveTourItemsToFirestore(filtered, city);
+    await _saveStayItemsToFirestore(filtered, city);
   }
 
-  // 맛집 로딩
+  // Firestore 저장(숙소)
+  Future<void> _saveStayItemsToFirestore(
+      List<dynamic> items,
+      String location,
+      ) async {
+    final batch = FirebaseFirestore.instance.batch();
+    final random = Random();
+
+    for (var item in items) {
+      final id = item["contentid"].toString();
+      final docRef =
+      FirebaseFirestore.instance.collection("tourItems").doc(id);
+
+      final newItem = Map<String, dynamic>.from(item);
+      newItem.addAll({
+        "city": location,
+        "price": (10000 + random.nextInt(40000)),
+        "rating": (30 + random.nextInt(21)) / 10.0,
+        "review": random.nextInt(500),
+      });
+
+      batch.set(docRef, newItem);
+    }
+
+    await batch.commit();
+  }
+
+  // ==========================================================
+  // 주변 맛집 로드 & Firestore 저장
+  // ==========================================================
   Future<void> _loadNearbyRestaurants(Position pos, String city) async {
     setState(() => _loadingRestaurants = true);
 
     final rawList = await _fetchNearbyItems(pos.latitude, pos.longitude, 39);
-    final filtered = rawList.where((item) => item['firstimage'] != null && item['firstimage'].toString().isNotEmpty).toList();
+
+    final filtered = rawList
+        .where((item) =>
+    item["firstimage"] != null &&
+        item["firstimage"].toString().isNotEmpty)
+        .toList();
 
     setState(() {
       _nearRestaurants = filtered;
       _loadingRestaurants = false;
     });
 
-    await saveRestaurantItemsToFirestore(filtered, city);
+    await _saveRestaurantItemsToFirestore(filtered, city);
   }
 
-  // UI ------------------------------------
+  // Firestore 저장(맛집)
+  Future<void> _saveRestaurantItemsToFirestore(
+      List<dynamic> items,
+      String location,
+      ) async {
+    final batch = FirebaseFirestore.instance.batch();
+    final random = Random();
+
+    for (var item in items) {
+      final id = item["contentid"].toString();
+      final docRef =
+      FirebaseFirestore.instance.collection("restaurantItems").doc(id);
+
+      final newItem = Map<String, dynamic>.from(item);
+      newItem.addAll({
+        "city": location,
+        "avgPrice": (5000 + random.nextInt(20000)),
+        "rating": (30 + random.nextInt(21)) / 10.0,
+        "review": random.nextInt(500),
+      });
+
+      batch.set(docRef, newItem);
+    }
+
+    await batch.commit();
+  }
+
+  // ==========================================================
+  // UI 시작
+  // ==========================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.only(bottom: 80),
+          padding: const EdgeInsets.only(bottom: 80),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("COSPICKER", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-
-                // 검색
-                Container(
-                  height: 50,
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset("assets/menu_icon.png", width: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(hintText: "검색어를 입력하세요", border: InputBorder.none),
-                        ),
-                      ),
-                      Image.asset("assets/search_icon.png", width: 20),
-                    ],
-                  ),
+                const Text(
+                  "COSPICKER",
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 16),
 
-                SizedBox(height: 16),
+                // 검색창
+                _searchBar(),
+
+                const SizedBox(height: 16),
+
+                // 상단 메뉴 (숙소 / 맛집 / 커뮤니티)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -472,37 +467,92 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
                   ],
                 ),
 
-                SizedBox(height: 20),
-                Text("최근 본 숙소 >", style: TextStyle(fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                _horizontalListView(_recentStays, _loadingRecentStays, "최근 본 숙소가 없습니다."),
+                const SizedBox(height: 20),
 
-                SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/near', arguments: ContentType.accommodation),
-                  child: Text("근처 숙소 >", style: TextStyle(fontWeight: FontWeight.bold)),
+                // 최근 본 숙소
+                const Text(
+                  "최근 본 숙소 >",
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 10),
-                _horizontalListView(_nearAccommodations, _loadingAccommodations, "주변 숙소가 없습니다."),
-
-                SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/near', arguments: ContentType.restaurant),
-                  child: Text("근처 맛집 >", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                _horizontalListView(
+                  _recentStays,
+                  _loadingRecentStays,
+                  "최근 본 숙소가 없습니다.",
                 ),
-                SizedBox(height: 10),
-                _horizontalListView(_nearRestaurants, _loadingRestaurants, "주변 맛집이 없습니다."),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
+
+                // 최근 본 맛집
+                const Text(
+                  "최근 본 맛집 >",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 10),
+                _horizontalListViewRestaurant(
+                  _recentRestaurants,
+                  _loadingRecentRestaurants,
+                  "최근 본 맛집이 없습니다.",
+                ),
+
+                const SizedBox(height: 20),
+
+                // 근처 숙소
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/near',
+                    arguments: ContentType.accommodation,
+                  ),
+                  child: const Text(
+                    "근처 숙소 >",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _horizontalListView(
+                  _nearAccommodations,
+                  _loadingAccommodations,
+                  "주변 숙소가 없습니다.",
+                ),
+
+                const SizedBox(height: 20),
+
+                // 근처 맛집
+                GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    '/near',
+                    arguments: ContentType.restaurant,
+                  ),
+                  child: const Text(
+                    "근처 맛집 >",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _horizontalListViewRestaurant(
+                  _nearRestaurants,
+                  _loadingRestaurants,
+                  "주변 맛집이 없습니다.",
+                ),
+
+                const SizedBox(height: 30),
               ],
             ),
           ),
         ),
       ),
 
+      // 하단 네비게이션
       bottomNavigationBar: Container(
         height: 70,
-        decoration: BoxDecoration(color: Color(0xFFF0F0F0), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF0F0F0),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 4),
+          ],
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -517,14 +567,122 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     );
   }
 
-  // 메뉴 버튼
+  // ==========================================================
+  // 검색창 + 검색 동작
+  // ==========================================================
+  Widget _searchBar() {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Image.asset("assets/menu_icon.png", width: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: "지역명을 입력하세요",
+                border: InputBorder.none,
+              ),
+              onSubmitted: (_) => _openSearchTypeSelector(),
+            ),
+          ),
+          GestureDetector(
+            onTap: _openSearchTypeSelector,
+            child: Image.asset("assets/search_icon.png", width: 20),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 검색어 입력 후 → 숙소/맛집 선택 모달
+  void _openSearchTypeSelector() {
+    final keyword = _searchController.text.trim();
+    if (keyword.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "검색 유형 선택",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+
+              // 숙소 검색
+              ListTile(
+                leading: const Icon(Icons.home, size: 28),
+                title: const Text("숙소 검색"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    "/stayList",
+                    arguments: {
+                      "location": keyword,
+                      "date": "",
+                      "people": 2,
+                    },
+                  );
+                },
+              ),
+
+              // 맛집 검색
+              ListTile(
+                leading: const Icon(Icons.restaurant, size: 28),
+                title: const Text("맛집 검색"),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(
+                    context,
+                    "/restaurantList",
+                    arguments: {
+                      "location": keyword,
+                    },
+                  );
+                },
+              ),
+
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // 상단 메뉴 버튼 (숙소 / 맛집 / 커뮤니티)
+  // ==========================================================
   Widget _topMenu(String label, String asset) {
     return InkWell(
       onTap: () {
         if (label == "숙소") {
-          Navigator.pushNamed(context, '/staySearch', arguments: ContentType.accommodation);
+          Navigator.pushNamed(
+            context,
+            '/staySearch',
+            arguments: ContentType.accommodation,
+          );
         } else if (label == "맛집") {
-          Navigator.pushNamed(context, '/staySearch', arguments: ContentType.restaurant);
+          Navigator.pushNamed(
+            context,
+            '/restaurantSearch',
+            arguments: ContentType.restaurant,
+          );
         } else if (label == "커뮤니티") {
           Navigator.pushNamed(context, '/community');
         }
@@ -532,17 +690,34 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
       child: Column(
         children: [
           Image.asset(asset, width: 40),
-          SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 12)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );
   }
 
-  // 가로 리스트
-  Widget _horizontalListView(List<dynamic> items, bool loading, String emptyText) {
-    if (loading) return SizedBox(height: 120, child: Center(child: CircularProgressIndicator()));
-    if (items.isEmpty) return SizedBox(height: 120, child: Center(child: Text(emptyText)));
+  // ==========================================================
+  // 숙소 공용 가로 리스트
+  // ==========================================================
+  Widget _horizontalListView(
+      List<dynamic> items,
+      bool loading,
+      String emptyText,
+      ) {
+    if (loading) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (items.isEmpty) {
+      return SizedBox(
+        height: 120,
+        child: Center(child: Text(emptyText)),
+      );
+    }
 
     return SizedBox(
       height: 120,
@@ -553,29 +728,32 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
           final acc = items[i];
 
           return GestureDetector(
-
             onTap: () async {
               final doc = await FirebaseFirestore.instance
                   .collection("tourItems")
                   .doc(acc['contentid'].toString())
                   .get();
+
               if (!doc.exists) return;
+
               final fullData = doc.data() as Map<String, dynamic>;
+
               saveRecentStay(fullData['contentid'].toString());
+
               Navigator.pushNamed(
                 context,
                 '/stayDetail',
                 arguments: {
                   ...fullData,
                   "id": acc["contentid"],
-                  "date":"",
-                  "people":2,
+                  "date": "",
+                  "people": 2,
                 },
               );
             },
             child: Container(
               width: 120,
-              margin: EdgeInsets.only(right: 10),
+              margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
@@ -590,26 +768,103 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware{
     );
   }
 
-  // 하단 네비게이션
+  // ==========================================================
+  // 맛집용 가로 리스트
+  // ==========================================================
+  Widget _horizontalListViewRestaurant(
+      List<dynamic> items,
+      bool loading,
+      String emptyText,
+      ) {
+    if (loading) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (items.isEmpty) {
+      return SizedBox(
+        height: 120,
+        child: Center(child: Text(emptyText)),
+      );
+    }
+
+    return SizedBox(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        itemBuilder: (context, i) {
+          final rest = items[i];
+
+          return GestureDetector(
+            onTap: () async {
+              final doc = await FirebaseFirestore.instance
+                  .collection("restaurantItems")
+                  .doc(rest['contentid'].toString())
+                  .get();
+
+              if (!doc.exists) return;
+
+              final fullData = doc.data() as Map<String, dynamic>;
+
+              saveRecentRestaurant(fullData['contentid'].toString());
+
+              Navigator.pushNamed(
+                context,
+                '/restaurantDetail',
+                arguments: {
+                  ...fullData,
+                  "contentid": fullData["contentid"],
+                },
+              );
+            },
+            child: Container(
+              width: 120,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                image: DecorationImage(
+                  image: NetworkImage(rest['firstimage']),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ==========================================================
+  // 하단 네비게이션 아이템
+  // ==========================================================
   Widget _bottomItem(BuildContext context, String label, String asset) {
     return InkWell(
       onTap: () {
-        if (label == "프로필") {
-          Navigator.pushNamed(context, '/profile');
-        } else if (label == "홈") {
+        if (label == "홈") {
           Navigator.pushNamed(context, '/home');
+        } else if (label == "위시") {
+          Navigator.pushNamed(context, '/wishList');
+        } else if (label == "주변") {
+          Navigator.pushNamed(
+            context,
+            '/near',
+            arguments: ContentType.accommodation,
+          );
         } else if (label == "메시지") {
           Navigator.pushNamed(context, '/chatRoomList');
-        } else if (label == "주변") {
-          Navigator.pushNamed(context, '/near', arguments: ContentType.accommodation);
+        } else if (label == "프로필") {
+          Navigator.pushNamed(context, '/profile');
         }
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Image.asset(asset, width: 28),
-          SizedBox(height: 3),
-          Text(label, style: TextStyle(fontSize: 12)),
+          const SizedBox(height: 3),
+          Text(label, style: const TextStyle(fontSize: 12)),
         ],
       ),
     );

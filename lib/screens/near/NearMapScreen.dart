@@ -3,12 +3,14 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cospicker/models/content_type.dart';
 
 // 데이터 로딩 상태를 명확히 구분하기 위한 열거형 추가
 enum DataStatus { initial, loading, success, failure }
 
 // 콘텐츠 타입 (숙소=32, 맛집=39)을 구분하는 열거형 추가
-enum ContentType { accommodation, restaurant }
+//enum ContentType { accommodation, restaurant }
+
 
 // Accommodation 모델 정의 (변경 없음)
 class Accommodation {
@@ -50,32 +52,37 @@ Future<List<dynamic>> fetchTourApiLocationBased({
   int numOfRows = 10,
   int pageNo = 1,
 }) async {
-  const String serviceKey = "투어api";
+  const String serviceKey =
+      "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
   const String mobileOS = "ETC";
   const String mobileApp = "Cospicker";
 
   final url = Uri.parse(
-      "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
-          "?serviceKey=$serviceKey"
-          "&mapX=$lng"
-          "&mapY=$lat"
-          "&radius=$radius"
-          "&arrange=$arrange"
-          "&numOfRows=$numOfRows"
-          "&pageNo=$pageNo"
-          "&contentTypeId=$contentTypeId"
-          "&MobileOS=$mobileOS"
-          "&MobileApp=$mobileApp"
-          "&_type=json"
+    "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
+    "?serviceKey=$serviceKey"
+    "&mapX=$lng"
+    "&mapY=$lat"
+    "&radius=$radius"
+    "&arrange=$arrange"
+    "&numOfRows=$numOfRows"
+    "&pageNo=$pageNo"
+    "&contentTypeId=$contentTypeId"
+    "&MobileOS=$mobileOS"
+    "&MobileApp=$mobileApp"
+    "&_type=json",
   );
   print("📡 TourAPI 요청 (ContentType: $contentTypeId): $url");
   try {
-    final response = await http.get(url, headers: {'Accept': 'application/json'});
+    final response = await http.get(
+      url,
+      headers: {'Accept': 'application/json'},
+    );
     print("📩 Raw API Response: ${response.body}");
 
-
     if (response.statusCode != 200) {
-      print("Error: HTTP Status ${response.statusCode}, Body: ${response.body}");
+      print(
+        "Error: HTTP Status ${response.statusCode}, Body: ${response.body}",
+      );
       return [];
     }
 
@@ -101,8 +108,13 @@ Future<List<dynamic>> fetchTourApiLocationBased({
     return [];
   }
 }
+
 // 숙소/맛집 정보를 공통으로 가져오는 함수
-Future<List<Accommodation>> fetchContent(double lat, double lng, ContentType type) async {
+Future<List<Accommodation>> fetchContent(
+  double lat,
+  double lng,
+  ContentType type,
+) async {
   final contentTypeId = (type == ContentType.accommodation) ? 32 : 39;
 
   final rawList = await fetchTourApiLocationBased(
@@ -115,17 +127,20 @@ Future<List<Accommodation>> fetchContent(double lat, double lng, ContentType typ
   );
   return rawList
       .map((item) => Accommodation.fromJson(item, type))
-      .where((acc) => acc.lat != 0 && acc.lng != 0 && acc.image != null && acc.image!.isNotEmpty)
+      .where(
+        (acc) =>
+            acc.lat != 0 &&
+            acc.lng != 0 &&
+            acc.image != null &&
+            acc.image!.isNotEmpty,
+      )
       .toList();
 }
 
 class NearMapScreen extends StatefulWidget {
   final ContentType type;
 
-  const NearMapScreen({
-    super.key,
-    required this.type,
-  });
+  const NearMapScreen({super.key, required this.type});
 
   @override
   State<NearMapScreen> createState() => _NearMapScreenState();
@@ -154,14 +169,16 @@ class _NearMapScreenState extends State<NearMapScreen> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        if (permission == LocationPermission.denied ||
+            permission == LocationPermission.deniedForever) {
           _initialPosition = const LatLng(37.5665, 126.9780);
         }
       }
 
       if (_initialPosition == null) {
         Position pos = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high);
+          desiredAccuracy: LocationAccuracy.high,
+        );
         _initialPosition = LatLng(pos.latitude, pos.longitude);
         print("현재 위치: $_initialPosition");
       }
@@ -176,11 +193,12 @@ class _NearMapScreenState extends State<NearMapScreen> {
 
   // 숙소/맛집 마커 및 목록 로딩
   void _loadMarkers(LatLng pos, ContentType type) async {
-
     if (_dataLoadingStatus == DataStatus.loading) return;
 
     // 타입이 같을 시 로딩 x
-    if (_dataLoadingStatus == DataStatus.success && _selectedContentType == type) return;
+    if (_dataLoadingStatus == DataStatus.success &&
+        _selectedContentType == type)
+      return;
 
     if (!mounted) return;
     setState(() {
@@ -189,7 +207,11 @@ class _NearMapScreenState extends State<NearMapScreen> {
     });
 
     try {
-      final accommodations = await fetchContent(pos.latitude, pos.longitude, type);
+      final accommodations = await fetchContent(
+        pos.latitude,
+        pos.longitude,
+        type,
+      );
 
       if (!mounted) return;
 
@@ -198,7 +220,8 @@ class _NearMapScreenState extends State<NearMapScreen> {
         _markers = accommodations.map((acc) {
           // 타입에 따라 마커 색상 구분
           final hue = acc.type == ContentType.accommodation
-              ? BitmapDescriptor.hueAzure // 숙소: 하늘색
+              ? BitmapDescriptor
+                    .hueAzure // 숙소: 하늘색
               : BitmapDescriptor.hueRed; // 맛집: 빨간색
 
           return Marker(
@@ -211,7 +234,6 @@ class _NearMapScreenState extends State<NearMapScreen> {
         _dataLoadingStatus = DataStatus.success; // 로딩 완료
       });
       print("총 마커 개수: ${_markers.length} (로딩 완료)");
-
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -235,20 +257,17 @@ class _NearMapScreenState extends State<NearMapScreen> {
   void _moveToCurrentLocation() async {
     try {
       Position pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.high,
+      );
 
       _controller?.animateCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(pos.latitude, pos.longitude),
-            zoom: 16,
-          ),
+          CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 16),
         ),
       );
 
       // 위치 이동 후 현재 타입으로 마커를 다시 로드 (혹시 위치가 바뀌었을 경우 대비)
       _loadMarkers(LatLng(pos.latitude, pos.longitude), _selectedContentType);
-
     } catch (e) {
       print("현재 위치로 이동 실패: $e");
       if (mounted) {
@@ -261,14 +280,25 @@ class _NearMapScreenState extends State<NearMapScreen> {
 
   // DraggableScrollableSheet 내부에서 사용될 숙소/맛집 목록 위젯
   Widget _buildAccommodationList(ScrollController scrollController) {
-    final typeName = _selectedContentType == ContentType.accommodation ? '숙소' : '맛집';
+    final typeName = _selectedContentType == ContentType.accommodation
+        ? '숙소'
+        : '맛집';
 
     // 로딩 및 초기 상태
-    if (_dataLoadingStatus == DataStatus.loading || _dataLoadingStatus == DataStatus.initial) {
+    if (_dataLoadingStatus == DataStatus.loading ||
+        _dataLoadingStatus == DataStatus.initial) {
       return Column(
         children: [
           _buildDragHandle(),
-          Expanded(child: Center(child: CircularProgressIndicator(color: _selectedContentType == ContentType.accommodation ? Colors.blueAccent : Colors.redAccent))),
+          Expanded(
+            child: Center(
+              child: CircularProgressIndicator(
+                color: _selectedContentType == ContentType.accommodation
+                    ? Colors.blueAccent
+                    : Colors.redAccent,
+              ),
+            ),
+          ),
         ],
       );
     }
@@ -307,7 +337,11 @@ class _NearMapScreenState extends State<NearMapScreen> {
           padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 12.0),
           child: Text(
             '주변 $typeName 목록 (${_accommodations.length}개)',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
         ),
         // 숙소/맛집 리스트
@@ -323,7 +357,10 @@ class _NearMapScreenState extends State<NearMapScreen> {
               return Column(
                 children: [
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8.0,
+                      horizontal: 16.0,
+                    ),
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(8.0),
                       child: Image.network(
@@ -331,22 +368,27 @@ class _NearMapScreenState extends State<NearMapScreen> {
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey[200],
-                              child: Icon(
-                                  acc.type == ContentType.accommodation ? Icons.hotel : Icons.restaurant,
-                                  size: 40,
-                                  color: Colors.grey[600]
-                              ),
-                            ),
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 80,
+                          height: 80,
+                          color: Colors.grey[200],
+                          child: Icon(
+                            acc.type == ContentType.accommodation
+                                ? Icons.hotel
+                                : Icons.restaurant,
+                            size: 40,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                     title: Text(
                       acc.title,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Colors.black),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.black,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -357,7 +399,10 @@ class _NearMapScreenState extends State<NearMapScreen> {
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ),
-                    trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                    ),
                     onTap: () {
                       // 리스트 항목을 탭하면 해당 마커 위치로 지도를 이동
                       _controller?.animateCamera(
@@ -371,7 +416,13 @@ class _NearMapScreenState extends State<NearMapScreen> {
                     },
                   ),
                   // 항목 하단에 얇은 구분선 추가
-                  const Divider(height: 1, thickness: 0.5, indent: 16, endIndent: 16, color: Colors.grey),
+                  const Divider(
+                    height: 1,
+                    thickness: 0.5,
+                    indent: 16,
+                    endIndent: 16,
+                    color: Colors.grey,
+                  ),
                 ],
               );
             },
@@ -401,7 +452,9 @@ class _NearMapScreenState extends State<NearMapScreen> {
   // 콘텐츠 타입 전환 버튼 위젯 (숙소/맛집)
   Widget _buildContentButton(ContentType type, String label, IconData icon) {
     final isSelected = _selectedContentType == type;
-    final color = type == ContentType.accommodation ? Colors.blueAccent : Colors.redAccent;
+    final color = type == ContentType.accommodation
+        ? Colors.blueAccent
+        : Colors.redAccent;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -413,7 +466,10 @@ class _NearMapScreenState extends State<NearMapScreen> {
           onTap: () => _switchContentType(type),
           borderRadius: BorderRadius.circular(25),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(
+              vertical: 8.0,
+              horizontal: 16.0,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -440,9 +496,7 @@ class _NearMapScreenState extends State<NearMapScreen> {
     if (_initialPosition == null) {
       return const Scaffold(
         backgroundColor: Colors.white,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -474,8 +528,11 @@ class _NearMapScreenState extends State<NearMapScreen> {
             // 맵 이동이 끝났을 때 현재 지도 중앙 기준으로 다시 로드
             onCameraIdle: () {
               _controller?.getVisibleRegion().then((LatLngBounds bounds) {
-                final centerLat = (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
-                final centerLng = (bounds.northeast.longitude + bounds.southwest.longitude) / 2;
+                final centerLat =
+                    (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
+                final centerLng =
+                    (bounds.northeast.longitude + bounds.southwest.longitude) /
+                    2;
                 // 현재 지도의 중심 위치를 기준으로 다시 검색 (중앙 위치가 이전과 크게 바뀌었을 때)
               });
             },
@@ -489,13 +546,20 @@ class _NearMapScreenState extends State<NearMapScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          _buildContentButton(ContentType.accommodation, '숙소', Icons.hotel_rounded),
-                          _buildContentButton(ContentType.restaurant, '맛집', Icons.restaurant_menu_rounded),
+                          _buildContentButton(
+                            ContentType.accommodation,
+                            '숙소',
+                            Icons.hotel_rounded,
+                          ),
+                          _buildContentButton(
+                            ContentType.restaurant,
+                            '맛집',
+                            Icons.restaurant_menu_rounded,
+                          ),
                         ],
                       ),
                       // 현재 위치 버튼 (FAB 스타일 적용)

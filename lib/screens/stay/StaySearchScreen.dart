@@ -4,23 +4,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
-import '/screens/near/NearMapScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-
-
-
-
-
-
+import 'package:cospicker/models/content_type.dart';
 
 class StaySearchScreen extends StatefulWidget {
-
   final ContentType type;
-  const StaySearchScreen({
-    super.key,
-    required this.type,
-  });
+  const StaySearchScreen({super.key, required this.type});
   @override
   State<StaySearchScreen> createState() => _StaySearchScreenState();
 }
@@ -69,7 +58,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
   //  const String serviceKey = "AIzaSyADP6VfQKeMMJP1aDPpJAPBTczfFp5cMTc";
   Future<Map<String, double>?> getLatLngByGoogle(String address) async {
-    final apiKey = "구글키";
+    final apiKey = "AIzaSyADP6VfQKeMMJP1aDPpJAPBTczfFp5cMTc";
     final url =
         "https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey";
 
@@ -81,22 +70,18 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       if (jsonData["results"].isNotEmpty) {
         final location = jsonData["results"][0]["geometry"]["location"];
 
-        return {
-          "lat": location["lat"],
-          "lng": location["lng"],
-        };
+        return {"lat": location["lat"], "lng": location["lng"]};
       }
     }
     return null;
   }
 
-
-
-  Future<void> saveRestaurantItemsToFirestore(List<dynamic> items, String location) async {
+  Future<void> saveRestaurantItemsToFirestore(
+    List<dynamic> items,
+    String location,
+  ) async {
     final batch = FirebaseFirestore.instance.batch();
     final random = Random();
-
-
 
     final descriptions = [
       "신선한 재료와 정성 가득한 조리로 많은 이들이 찾는 인기 맛집입니다.",
@@ -111,9 +96,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       "풍부한 향과 깔끔한 뒷맛을 자랑하며 많은 여행객들이 찾는 명소입니다.",
     ];
 
-
     for (var item in items) {
-
       final docRef = FirebaseFirestore.instance
           .collection("restaurantItems")
           .doc(item["contentid"]);
@@ -137,9 +120,10 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     await batch.commit();
   }
 
-
-
-  Future<void> saveTourItemsToFirestore(List<dynamic> items, String location) async {
+  Future<void> saveTourItemsToFirestore(
+    List<dynamic> items,
+    String location,
+  ) async {
     final batch = FirebaseFirestore.instance.batch();
     final random = Random();
 
@@ -173,7 +157,6 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
       final docSnap = await docRef.get();
       final roomsSnap = await docRef.collection("rooms").limit(1).get();
-
 
       if (docSnap.exists && roomsSnap.docs.isNotEmpty) {
         //print("이미 존재 및 rooms 있음: ${item["contentid"]} → 건너뜀");
@@ -221,18 +204,15 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
           "price": roomPrice,
           "salePrice": (roomPrice * 0.8 / 1000).round() * 1000,
           "roomImage": roomImages[random.nextInt(roomImages.length)],
-          "standard" : 2,
-          "max" : max,
+          "standard": 2,
+          "max": max,
         });
       }
-
     }
 
     await batch.commit();
     print("🔥 Firestore 저장 완료 (${items.length}개)");
   }
-
-
 
   Future<List<dynamic>> fetchTourApiLocationBased({
     required double lat,
@@ -240,10 +220,11 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     required int contentTypeId, //(숙소 32 /맛집 39)
     int radius = 5000,
     String arrange = "E",
-    int minItems = 3,       //  최소 개수 설정
-    int numOfRows = 10,      // 한 페이지 최대 개수
+    int minItems = 3, //  최소 개수 설정
+    int numOfRows = 10, // 한 페이지 최대 개수
   }) async {
-    const String serviceKey = "투어api";
+    const String serviceKey =
+        "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
     const String mobileOS = "ETC";
     const String mobileApp = "Cospicker";
 
@@ -258,26 +239,31 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
     while (accumulated.length < minItems) {
       final url = Uri.parse(
-          "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
-              "?serviceKey=$serviceKey"
-              "&mapX=$lng"
-              "&mapY=$lat"
-              "&radius=$radius"
-              "&arrange=$arrange"
-              "&numOfRows=$numOfRows"
-              "&pageNo=$pageNo"
-              "&contentTypeId=$contentTypeId"
-              "&MobileOS=$mobileOS"
-              "&MobileApp=$mobileApp"
-              "&_type=json"
+        "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
+        "?serviceKey=$serviceKey"
+        "&mapX=$lng"
+        "&mapY=$lat"
+        "&radius=$radius"
+        "&arrange=$arrange"
+        "&numOfRows=$numOfRows"
+        "&pageNo=$pageNo"
+        "&contentTypeId=$contentTypeId"
+        "&MobileOS=$mobileOS"
+        "&MobileApp=$mobileApp"
+        "&_type=json",
       );
 
       print("📡 TourAPI 요청 (Page $pageNo, ContentType: $contentTypeId): $url");
 
       try {
-        final response = await http.get(url, headers: {'Accept': 'application/json'});
+        final response = await http.get(
+          url,
+          headers: {'Accept': 'application/json'},
+        );
         if (response.statusCode != 200) {
-          print("Error: HTTP Status ${response.statusCode}, Body: ${response.body}");
+          print(
+            "Error: HTTP Status ${response.statusCode}, Body: ${response.body}",
+          );
           break;
         }
 
@@ -308,19 +294,18 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     return accumulated.take(minItems).toList(); // 최소 개수 보장
   }
 
-
-
   // ===============================
   // 검색 실행
   // ===============================
   // 지오코딩 지리 -> 위도 경도로 변환
   // https://maps.googleapis.com/maps/api/geocode/json?address=주소&key=API_KEY
-  void _doSearch() async  {
+  void _doSearch() async {
     String text = locationController.text.trim();
     if (text.isEmpty) return;
 
     final result = await getLatLngByGoogle(text);
-    print("위치 결과: $result");;
+    print("위치 결과: $result");
+    ;
     // 최근 검색 저장
     if (!recentList.contains(text)) {
       setState(() {
@@ -339,10 +324,9 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     print("LAT = $lat");
     print("LNG = $lng");
 
-    int contentTypeId =
-    currentType == ContentType.accommodation ? 32 : 39;
+    int contentTypeId = currentType == ContentType.accommodation ? 32 : 39;
 
-    final tourItems=await fetchTourApiLocationBased(
+    final tourItems = await fetchTourApiLocationBased(
       lat: lat,
       lng: lng,
       contentTypeId: contentTypeId,
@@ -368,13 +352,10 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       Navigator.pushNamed(
         context,
         '/restaurantList',
-        arguments: {
-          "location": text,
-        },
+        arguments: {"location": text},
       );
     }
   }
-
 
   // ===============================
   // 📅 날짜/인원 선택 화면 이동
@@ -442,7 +423,6 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           // 숙소
           GestureDetector(
             onTap: () {
@@ -478,33 +458,24 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
           const SizedBox(width: 40),
 
-          // 맛집
+          // 🍽 맛집 → 별도 화면 이동
           GestureDetector(
             onTap: () {
-              setState(() {
-                currentType = ContentType.restaurant;
-              });
+              Navigator.pushReplacementNamed(context, "/restaurantSearch");
             },
             child: Column(
               children: [
                 Icon(
                   Icons.storefront,
                   size: 30,
-                  color: currentType == ContentType.restaurant
-                      ? Colors.black
-                      : Colors.grey,
+                  color: Colors.grey,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   "맛집",
                   style: TextStyle(
-                    color: currentType == ContentType.restaurant
-                        ? Colors.black
-                        : Colors.grey,
+                    color: Colors.grey,
                     fontWeight: FontWeight.bold,
-                    decoration: currentType == ContentType.restaurant
-                        ? TextDecoration.underline
-                        : TextDecoration.none,
                   ),
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cospicker/models/content_type.dart';   // ⭐ 공통 enum
 
 import 'screens/splash/SplashScreen.dart';
 import 'firebase_options.dart';
@@ -16,8 +17,8 @@ import 'screens/auth/SignupComplete.dart';
 // Home
 import 'screens/home/HomeScreen.dart';
 
-//near
-import 'screens/near/NearMapScreen.dart';
+// near
+import 'screens/near/NearMapScreen.dart';   // ✔ enum 정의 제거했으면 이 import는 정상
 
 // Profile
 import 'screens/profile/ProfileScreen.dart';
@@ -35,7 +36,10 @@ import 'screens/community/MyComment.dart';
 
 // Chat
 import 'screens/chat/ChatRoom.dart';
-import 'screens/chat/ChatRoomList.dart';
+
+// WishList
+import 'screens/wish/WishListScreen.dart';
+import 'screens/wish/WishFolderDetailScreen.dart';
 
 // Stay
 import 'screens/stay/StaySearchScreen.dart';
@@ -46,9 +50,14 @@ import 'screens/stay/StayReviewScreen.dart';
 import 'screens/stay/StayRoomListScreen.dart';
 import 'screens/stay/StayReviewPolicyScreen.dart';
 
-import 'screens/stay/RestaurantListScreen.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// Restaurant
+import 'screens/restaurant/RestaurantListScreen.dart';
+import 'screens/restaurant/RestaurantDetailScreen.dart';
+import 'screens/restaurant/RestaurantReviewScreen.dart';
+import 'screens/restaurant/RestaurantSearchScreen.dart';
+import 'screens/restaurant/RestaurantMapScreen.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -69,18 +78,13 @@ class MyApp extends StatelessWidget {
       title: 'COSPICKER',
       initialRoute: '/',
       routes: {
-        //------------------------------------------------------------
-        // 기본 화면
-        //------------------------------------------------------------
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/home': (context) => HomeScreen(),
         '/signup': (context) => SignupScreen(),
         '/signupsuccess': (context) => SignupCompleteScreen(),
 
-        //------------------------------------------------------------
-        // 프로필
-        //------------------------------------------------------------
+        // Profile
         '/profile': (context) => ProfileScreen(),
         '/myInfo': (context) => MyinfoScreen(),
         '/editName': (context) => EditNameScreen(),
@@ -92,19 +96,23 @@ class MyApp extends StatelessWidget {
         '/myPost': (context) => MyPostsScreen(),
         '/myComment': (context) => MyCommentsScreen(),
 
-        //------------------------------------------------------------
-        // 커뮤니티
-        //------------------------------------------------------------
+        // Community
         '/community': (context) => CommunityMainScreen(),
         '/communityWrite': (context) => CommunityWriteScreen(),
 
-        //------------------------------------------------------------
-        // 주변
-        //------------------------------------------------------------
+        // Wishlist
+        '/wishList': (context) => WishListScreen(),
+        '/wishFolderDetail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          return WishFolderDetailScreen(
+            uid: args["uid"],
+            collectionName: args["collectionName"],
+            folderId: args["folderId"],
+            folderName: args["folderName"],
+          );
+        },
 
-        //------------------------------------------------------------
-        // 채팅
-        //------------------------------------------------------------
+        // Chat
         '/chatRoomList': (context) {
           final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
           return ChatRoomListScreen(uid: uid);
@@ -114,73 +122,61 @@ class MyApp extends StatelessWidget {
           return ChatRoomScreen(roomId: roomId);
         },
 
-        //맛집
+        // Restaurant
+        '/restaurantSearch': (context) => const RestaurantSearchScreen(),
         '/restaurantList': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
+          return RestaurantListScreen(location: args["location"]);
+        },
+        '/restaurantDetail': (context) {
           final args =
-          ModalRoute.of(context)!.settings.arguments
-          as Map<dynamic, dynamic>;
-
-          return RestaurantListScreen(
-            location: args["location"],
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return RestaurantDetailScreen(restaurantData: args);
+        },
+        '/restaurantMap': (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return RestaurantMapScreen(
+            lat: args["lat"],
+            lng: args["lng"],
+            title: args["title"],
           );
         },
 
-        //------------------------------------------------------------
-        // 숙소 검색 / 리스트
-        //------------------------------------------------------------
-        '/stayDatePeople': (context) => const StayDatePeopleScreen(),
-
-        '/stayList': (context) {
+        '/restaurantReview': (context) {
           final args =
-          ModalRoute.of(context)!.settings.arguments
-          as Map<dynamic, dynamic>;
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+          return RestaurantReviewScreen(
+            contentid: args["contentid"],
+            title: args["title"],
+          );
+        },
 
+        // Stay
+        '/stayDatePeople': (context) => const StayDatePeopleScreen(),
+        '/stayList': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
           return StayListScreen(
             location: args["location"],
             date: args["date"],
             people: args["people"],
           );
         },
-
-        //------------------------------------------------------------
-        // 숙소 상세
-        //------------------------------------------------------------
         '/stayDetail': (context) {
-          final args =
-          ModalRoute.of(context)!.settings.arguments
-          as Map<dynamic, dynamic>;
-
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
           return StayDetailScreen(stayData: Map<String, dynamic>.from(args));
         },
-
-        //------------------------------------------------------------
-        // 리뷰 전체보기
-        //------------------------------------------------------------
         '/stayReview': (context) {
-          final args =
-          ModalRoute.of(context)!.settings.arguments
-          as Map<dynamic, dynamic>;
-
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
           return StayReviewScreen(
             stayName: args["stayName"],
             rating: args["rating"] * 1.0,
             reviewImages: List<String>.from(args["reviewImages"] ?? []),
           );
         },
-
-        //------------------------------------------------------------
-        // 리뷰 정책 화면 ⭐
-        //------------------------------------------------------------
         '/stayReviewPolicy': (context) => const StayReviewPolicyScreen(),
-
-        //------------------------------------------------------------
-        // 모든 객실 보기
-        //------------------------------------------------------------
         '/stayRooms': (context) {
-          final args =
-          ModalRoute.of(context)!.settings.arguments
-          as Map<dynamic, dynamic>;
-
+          final args = ModalRoute.of(context)!.settings.arguments as Map;
           return StayRoomListScreen(
             stayData: Map<String, dynamic>.from(args["stayData"]),
             date: args["date"],
@@ -188,22 +184,34 @@ class MyApp extends StatelessWidget {
           );
         },
       },
-      onGenerateRoute: (settings) {
-        if (settings.name == '/near') {
-          final type = settings.arguments as ContentType;   // ← arguments 받음
 
-          return MaterialPageRoute(
-            builder: (context) => NearMapScreen(type: type),
-          );
-        }if (settings.name == '/staySearch') {
-          final type = settings.arguments as ContentType;
+      // ⭐ onGenerateRoute
+        onGenerateRoute: (settings) {
+          if (settings.name == '/near') {
+            final arg = settings.arguments;
+            final type = (arg is ContentType)
+                ? arg
+                : ContentType.accommodation;
 
-          return MaterialPageRoute(
-            builder: (context) => StaySearchScreen(type: type),
-          );
+            return MaterialPageRoute(
+              builder: (_) => NearMapScreen(type: type),
+            );
+          }
+
+          if (settings.name == '/staySearch') {
+            final arg = settings.arguments;
+            final type = (arg is ContentType)
+                ? arg
+                : ContentType.accommodation;
+
+            return MaterialPageRoute(
+              builder: (_) => StaySearchScreen(type: type),
+            );
+          }
+
+          return null;
         }
-        return null;
-      },
+
     );
   }
 }
