@@ -33,7 +33,13 @@ class MyPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: Text('로그인 상태가 아닙니다.')),
+      );
+    }
+    final String uid = user.uid;
 
     return Scaffold(
       backgroundColor: Colors.white,

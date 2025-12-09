@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:cospicker/models/content_type.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // 데이터 로딩 상태를 명확히 구분하기 위한 열거형 추가
 enum DataStatus { initial, loading, success, failure }
@@ -52,7 +53,7 @@ Future<List<dynamic>> fetchTourApiLocationBased({
   int numOfRows = 10,
   int pageNo = 1,
 }) async {
-  const String serviceKey =
+  final String serviceKey = dotenv.env['TOUR_API_SERVICE_KEY'] ??
       "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
   const String mobileOS = "ETC";
   const String mobileApp = "Cospicker";
@@ -71,16 +72,16 @@ Future<List<dynamic>> fetchTourApiLocationBased({
     "&MobileApp=$mobileApp"
     "&_type=json",
   );
-  print("📡 TourAPI 요청 (ContentType: $contentTypeId): $url");
+  debugPrint("📡 TourAPI 요청 (ContentType: $contentTypeId): $url");
   try {
     final response = await http.get(
       url,
       headers: {'Accept': 'application/json'},
     );
-    print("📩 Raw API Response: ${response.body}");
+    debugPrint("📩 Raw API Response: ${response.body}");
 
     if (response.statusCode != 200) {
-      print(
+      debugPrint(
         "Error: HTTP Status ${response.statusCode}, Body: ${response.body}",
       );
       return [];
@@ -91,7 +92,7 @@ Future<List<dynamic>> fetchTourApiLocationBased({
     final items = jsonData["response"]["body"]["items"];
 
     if (items == null) {
-      print("🔍 TourAPI 응답: items 필드가 비어있습니다.");
+      debugPrint("🔍 TourAPI 응답: items 필드가 비어있습니다.");
       return [];
     }
     // items가 Map인 경우 (데이터가 하나일 때)와 List인 경우를 모두 처리
@@ -104,7 +105,7 @@ Future<List<dynamic>> fetchTourApiLocationBased({
       return [];
     }
   } catch (e) {
-    print("네트워크/파싱 오류 발생: $e");
+    debugPrint("네트워크/파싱 오류 발생: $e");
     return [];
   }
 }
@@ -180,7 +181,7 @@ class _NearMapScreenState extends State<NearMapScreen> {
           desiredAccuracy: LocationAccuracy.high,
         );
         _initialPosition = LatLng(pos.latitude, pos.longitude);
-        print("현재 위치: $_initialPosition");
+        debugPrint("현재 위치: $_initialPosition");
       }
     } catch (e) {
       _initialPosition = const LatLng(37.5665, 126.9780);
@@ -233,14 +234,14 @@ class _NearMapScreenState extends State<NearMapScreen> {
         }).toSet();
         _dataLoadingStatus = DataStatus.success; // 로딩 완료
       });
-      print("총 마커 개수: ${_markers.length} (로딩 완료)");
+      debugPrint("총 마커 개수: ${_markers.length} (로딩 완료)");
     } catch (e) {
       if (mounted) {
         setState(() {
           _dataLoadingStatus = DataStatus.failure; // 로딩 실패
         });
       }
-      print("마커 로딩 중 오류 발생: $e");
+      debugPrint("마커 로딩 중 오류 발생: $e");
     }
   }
 
@@ -269,7 +270,7 @@ class _NearMapScreenState extends State<NearMapScreen> {
       // 위치 이동 후 현재 타입으로 마커를 다시 로드 (혹시 위치가 바뀌었을 경우 대비)
       _loadMarkers(LatLng(pos.latitude, pos.longitude), _selectedContentType);
     } catch (e) {
-      print("현재 위치로 이동 실패: $e");
+      debugPrint("현재 위치로 이동 실패: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('현재 위치를 가져올 수 없습니다. GPS 및 권한을 확인해주세요.')),

@@ -15,7 +15,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      uid = "";
+      return;
+    }
+    uid = user.uid;
   }
 
   // 알림 타입별 아이콘 구분

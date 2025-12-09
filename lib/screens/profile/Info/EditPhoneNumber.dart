@@ -94,7 +94,7 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
-      print("현재 user.uid: ${user.uid}");
+      debugPrint("현재 user.uid: ${user.uid}");
 
       // 기존 UID의 Firestore에 phoneNumber만 추가
       await FirebaseFirestore.instance

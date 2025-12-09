@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/screens/near/NearMapScreen.dart';
@@ -87,61 +88,50 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   // ========================================
-  // 최근 본 숙소 저장
+  // 최근 본 항목 저장 (공통 함수)
   // ========================================
-  Future<void> saveRecentStay(String contentId) async {
+  Future<void> _saveRecentItem(String contentId, String collectionName) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final docRef =
-    FirebaseFirestore.instance.collection("recentStays").doc(user.uid);
+    try {
+      final docRef =
+          FirebaseFirestore.instance.collection(collectionName).doc(user.uid);
 
-    final docSnap = await docRef.get();
+      final docSnap = await docRef.get();
 
-    List<String> list = [];
-    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
-      list = List<String>.from(docSnap["contentIds"]);
+      List<String> list = [];
+      if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
+        list = List<String>.from(docSnap["contentIds"]);
+      }
+
+      list.remove(contentId);
+      list.insert(0, contentId);
+
+      if (list.length > 10) list = list.sublist(0, 10);
+
+      if (docSnap.exists) {
+        await docRef.update({"contentIds": list});
+      } else {
+        await docRef.set({"contentIds": list});
+      }
+    } catch (e) {
+      debugPrint("최근 본 항목 저장 실패 ($collectionName): $e");
     }
+  }
 
-    list.remove(contentId);
-    list.insert(0, contentId);
-
-    if (list.length > 10) list = list.sublist(0, 10);
-
-    if (docSnap.exists) {
-      await docRef.update({"contentIds": list});
-    } else {
-      await docRef.set({"contentIds": list});
-    }
+  // ========================================
+  // 최근 본 숙소 저장
+  // ========================================
+  Future<void> saveRecentStay(String contentId) async {
+    await _saveRecentItem(contentId, "recentStays");
   }
 
   // ========================================
   // 최근 본 맛집 저장
   // ========================================
   Future<void> saveRecentRestaurant(String contentId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final docRef =
-    FirebaseFirestore.instance.collection("recentRestaurants").doc(user.uid);
-
-    final docSnap = await docRef.get();
-
-    List<String> list = [];
-    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
-      list = List<String>.from(docSnap["contentIds"]);
-    }
-
-    list.remove(contentId);
-    list.insert(0, contentId);
-
-    if (list.length > 10) list = list.sublist(0, 10);
-
-    if (docSnap.exists) {
-      await docRef.update({"contentIds": list});
-    } else {
-      await docRef.set({"contentIds": list});
-    }
+    await _saveRecentItem(contentId, "recentRestaurants");
   }
 
   // ========================================
@@ -176,10 +166,16 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   Future<String> _getCityFromLatLng(double lat, double lng) async {
     try {
       final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isEmpty) {
+        return "Unknown";
+      }
       final place = placemarks.first;
       return place.administrativeArea ?? "Unknown";
+    } on PlatformException catch (e) {
+      debugPrint("도시 변환 실패 (PlatformException): ${e.message}");
+      return "Unknown";
     } catch (e) {
-      print("도시 변환 실패: $e");
+      debugPrint("도시 변환 실패: $e");
       return "Unknown";
     }
   }
@@ -275,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        print("위치 권한 없음");
+        debugPrint("위치 권한 없음");
         return null;
       }
 
@@ -283,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         desiredAccuracy: LocationAccuracy.high,
       );
     } catch (e) {
-      print("위치 가져오기 실패: $e");
+      debugPrint("위치 가져오기 실패: $e");
       return null;
     }
   }
@@ -328,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
       return [];
     } catch (e) {
-      print("Tour API 오류: $e");
+      debugPrint("Tour API 오류: $e");
       return [];
     }
   }

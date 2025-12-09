@@ -6,7 +6,13 @@ class ChatRoomListScreen extends StatelessWidget {
   const ChatRoomListScreen({super.key});
 
   /// 현재 로그인한 사용자 UID
-  String get uid => FirebaseAuth.instance.currentUser!.uid;
+  String get uid {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    return user.uid;
+  }
 
   /// 유저 정보 가져오기
   Future<Map<String, dynamic>> _getUserInfo(String uid) async {

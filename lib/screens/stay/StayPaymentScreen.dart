@@ -35,23 +35,32 @@ class _StayPaymentScreenState extends State<StayPaymentScreen> {
   // 🔥 Firestore 저장 함수 (roomImage 포함)
   // ==========================================
   Future<void> saveReservation() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    
+    final uid = user.uid;
     final data = widget.paymentData;
 
-    await FirebaseFirestore.instance.collection("reservation").add({
-      "uid": uid,
-      "roomName": data["roomName"],
-      "price": data["price"],
-      "date": data["date"],
-      "people": data["people"],
-      "roomImage": data["roomImage"] ?? "", // 이미지 저장 필수!
-      "buyerName": nameController.text,
-      "buyerPhone": phoneController.text,
-      "buyerEmail": emailController.text,
-      "paymentMethod": selectedPayMethod,
-      "status": "upcoming",
-      "createdAt": Timestamp.now(),
-    });
+    try {
+      await FirebaseFirestore.instance.collection("reservation").add({
+        "uid": uid,
+        "roomName": data["roomName"],
+        "price": data["price"],
+        "date": data["date"],
+        "people": data["people"],
+        "roomImage": data["roomImage"] ?? "", // 이미지 저장 필수!
+        "buyerName": nameController.text,
+        "buyerPhone": phoneController.text,
+        "buyerEmail": emailController.text,
+        "paymentMethod": selectedPayMethod,
+        "status": "upcoming",
+        "createdAt": Timestamp.now(),
+      });
+    } catch (e) {
+      throw Exception('예약 저장 실패: $e');
+    }
   }
 
   // ==========================================
@@ -258,7 +267,6 @@ class _StayPaymentScreenState extends State<StayPaymentScreen> {
         child: ElevatedButton(
           onPressed: (selectedPayMethod.isNotEmpty && agreeAll)
               ? () async {
-
             // 입력값 검증
             if (nameController.text.isEmpty ||
                 phoneController.text.isEmpty ||
@@ -269,16 +277,25 @@ class _StayPaymentScreenState extends State<StayPaymentScreen> {
               return;
             }
 
-            await saveReservation();
-
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PaymentLoadingScreen(
-                  paymentData: widget.paymentData,
-                ),
-              ),
-            );
+            try {
+              await saveReservation();
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PaymentLoadingScreen(
+                      paymentData: widget.paymentData,
+                    ),
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('예약 저장 실패: $e')),
+                );
+              }
+            }
           }
               : null,
 

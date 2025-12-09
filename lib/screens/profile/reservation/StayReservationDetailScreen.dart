@@ -13,7 +13,14 @@ class StayReservationScreen extends StatefulWidget {
 class _StayReservationScreenState extends State<StayReservationScreen>
     with TickerProviderStateMixin {
   late TabController _tab;
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  
+  String get uid {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    return user.uid;
+  }
 
   @override
   void initState() {
@@ -50,7 +57,7 @@ class _StayReservationScreenState extends State<StayReservationScreen>
 
       if (today.isAfter(checkOut)) {
         await doc.reference.update({"status": "completed"});
-        print("✔ 자동 완료 처리됨 → ${doc.id}");
+        debugPrint("✔ 자동 완료 처리됨 → ${doc.id}");
       }
     }
   }

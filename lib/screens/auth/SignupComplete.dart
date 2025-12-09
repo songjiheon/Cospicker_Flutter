@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../home/HomeScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
@@ -40,7 +39,12 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
     return code;
   }
   Future<void> saveFriendCode() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      debugPrint("로그인 상태가 아닙니다. 친구코드를 생성할 수 없습니다.");
+      return;
+    }
+    final uid = user.uid;
 
     final code = await generateUniqueFriendCode();
 
@@ -49,7 +53,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
         .doc(uid)
         .update({'friendCode': code});
 
-    print("친구코드 생성됨: $code");
+    debugPrint("친구코드 생성됨: $code");
   }
   @override
   void initState() {

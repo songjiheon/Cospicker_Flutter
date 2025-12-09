@@ -14,7 +14,14 @@ class RestaurantDetailScreen extends StatefulWidget {
 class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  
+  String get uid {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    return user.uid;
+  }
 
   bool isSaved = false;
   String? savedFolderId;

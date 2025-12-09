@@ -69,7 +69,12 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
   //파이어베이스 user 프로필 업데이트
   Future<void> _updateProfileImage() async {
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        debugPrint("로그인 상태가 아닙니다.");
+        return;
+      }
+      final uid = user.uid;
       final XFile? pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (pickedImage == null) return;
 
@@ -87,7 +92,7 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
         profileImageUrl = downloadUrl;
       });
     } catch (e) {
-      print("프로필 이미지 업로드 실패: $e");
+      debugPrint("프로필 이미지 업로드 실패: $e");
     }
   }
 
@@ -152,7 +157,7 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
                         child: GestureDetector(
                           onTap: () {
                             _updateProfileImage();
-                            print("이미지 변경 클릭");
+                            debugPrint("이미지 변경 클릭");
                           },
                           child: Container(
                             width: 24,

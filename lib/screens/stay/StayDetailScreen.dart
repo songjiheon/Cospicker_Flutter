@@ -29,7 +29,9 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------ 찜 여부 확인 ------------------
   Future<void> _checkIsWished() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     final snap = await FirebaseFirestore.instance
         .collection("users")
@@ -45,7 +47,9 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------ 찜 저장 ------------------
   Future<void> _saveStayGlobal() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     await FirebaseFirestore.instance
         .collection("users")
@@ -68,7 +72,9 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------ 찜 삭제 ------------------
   Future<void> _removeStayGlobal() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     await FirebaseFirestore.instance
         .collection("users")
@@ -283,7 +289,9 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
   // 위시 폴더 선택 BottomSheet
   // ------------------------------------------------------
   void _openStayWishFolder() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     showModalBottomSheet(
       context: context,
@@ -353,7 +361,9 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   // ------------------------- 선택한 폴더에 저장 -------------------------
   Future<void> _saveStayToFolder(String folderId) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     await FirebaseFirestore.instance
         .collection("users")

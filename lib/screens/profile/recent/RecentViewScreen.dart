@@ -26,7 +26,9 @@ class _RecentViewedScreenState extends State<RecentViewedScreen> {
   // 최근 본 숙소 + 맛집 로딩
   // ==========================================================
   Future<void> _loadAllRecent() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     List<Map<String, dynamic>> temp = [];
 
@@ -91,7 +93,9 @@ class _RecentViewedScreenState extends State<RecentViewedScreen> {
   // 🔥 개별 삭제 기능
   // ==========================================================
   Future<void> _deleteItem(Map<String, dynamic> item) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     if (item["type"] == "stay") {
       stayIds.remove(item["id"]);
@@ -116,7 +120,9 @@ class _RecentViewedScreenState extends State<RecentViewedScreen> {
   // 🔥 전체 삭제 기능
   // ==========================================================
   Future<void> _deleteAll() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
 
     await FirebaseFirestore.instance
         .collection("recentStays")

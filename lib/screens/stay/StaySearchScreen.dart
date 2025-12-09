@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cospicker/models/content_type.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class StaySearchScreen extends StatefulWidget {
   final ContentType type;
@@ -56,9 +57,9 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     });
   }
 
-  //  const String serviceKey = "AIzaSyADP6VfQKeMMJP1aDPpJAPBTczfFp5cMTc";
   Future<Map<String, double>?> getLatLngByGoogle(String address) async {
-    final apiKey = "AIzaSyADP6VfQKeMMJP1aDPpJAPBTczfFp5cMTc";
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ??
+        "AIzaSyADP6VfQKeMMJP1aDPpJAPBTczfFp5cMTc";
     final url =
         "https://maps.googleapis.com/maps/api/geocode/json?address=$address&key=$apiKey";
 
@@ -211,7 +212,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     }
 
     await batch.commit();
-    print("🔥 Firestore 저장 완료 (${items.length}개)");
+    debugPrint("🔥 Firestore 저장 완료 (${items.length}개)");
   }
 
   Future<List<dynamic>> fetchTourApiLocationBased({
@@ -223,7 +224,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     int minItems = 3, //  최소 개수 설정
     int numOfRows = 10, // 한 페이지 최대 개수
   }) async {
-    const String serviceKey =
+    final String serviceKey = dotenv.env['TOUR_API_SERVICE_KEY'] ??
         "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
     const String mobileOS = "ETC";
     const String mobileApp = "Cospicker";
@@ -253,7 +254,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         "&_type=json",
       );
 
-      print("📡 TourAPI 요청 (Page $pageNo, ContentType: $contentTypeId): $url");
+      debugPrint("📡 TourAPI 요청 (Page $pageNo, ContentType: $contentTypeId): $url");
 
       try {
         final response = await http.get(
@@ -261,7 +262,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
           headers: {'Accept': 'application/json'},
         );
         if (response.statusCode != 200) {
-          print(
+          debugPrint(
             "Error: HTTP Status ${response.statusCode}, Body: ${response.body}",
           );
           break;
@@ -285,12 +286,12 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         accumulated.addAll(filtered);
         pageNo++; // 다음 페이지
       } catch (e) {
-        print("네트워크/파싱 오류 발생: $e");
+        debugPrint("네트워크/파싱 오류 발생: $e");
         break;
       }
     }
 
-    print("✅ 최종 누적 항목 수: ${accumulated.length}");
+    debugPrint("✅ 최종 누적 항목 수: ${accumulated.length}");
     return accumulated.take(minItems).toList(); // 최소 개수 보장
   }
 
@@ -304,7 +305,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     if (text.isEmpty) return;
 
     final result = await getLatLngByGoogle(text);
-    print("위치 결과: $result");
+    debugPrint("위치 결과: $result");
     ;
     // 최근 검색 저장
     if (!recentList.contains(text)) {
@@ -314,15 +315,15 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       _saveRecentSearch(); // Firestore 저장
     }
     if (result == null) {
-      print("❌ 주소 → 좌표 변환 실패");
+      debugPrint("❌ 주소 → 좌표 변환 실패");
       return;
     }
 
     double lat = result["lat"]!;
     double lng = result["lng"]!;
 
-    print("LAT = $lat");
-    print("LNG = $lng");
+    debugPrint("LAT = $lat");
+    debugPrint("LNG = $lng");
 
     int contentTypeId = currentType == ContentType.accommodation ? 32 : 39;
 

@@ -118,6 +118,15 @@ lib/
 
 🚀 실행 방법
 -------------
+1. 환경 변수 설정
+   - 프로젝트 루트에 `.env` 파일을 생성하고 다음 내용을 추가하세요:
+   ```plaintext
+   TOUR_API_SERVICE_KEY=your_tour_api_service_key
+   GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+   ```
+   - `.env.example` 파일을 참고하여 실제 키 값을 입력하세요.
+
+2. 의존성 설치 및 실행
 ```plaintext
 flutter pub get  
 flutter run

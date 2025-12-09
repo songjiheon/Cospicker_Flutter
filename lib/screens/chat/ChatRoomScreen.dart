@@ -17,7 +17,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  final currentUser = FirebaseAuth.instance.currentUser!;
+  User? get currentUser => FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? _currentUserData;
 
   String? otherUid;
@@ -41,7 +41,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // 현재 유저 정보 로드
   // ---------------------------
   Future<void> _loadCurrentUser() async {
-    _currentUserData = await _getUserInfo(currentUser.uid);
+    final user = currentUser;
+    if (user == null) return;
+    _currentUserData = await _getUserInfo(user.uid);
     setState(() {});
   }
 
@@ -55,7 +57,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .get();
 
     List members = doc["users"];
-    otherUid = members.firstWhere((uid) => uid != currentUser.uid);
+    final user = currentUser;
+    if (user == null) return;
+    otherUid = members.firstWhere((uid) => uid != user.uid);
 
     otherUserData = await _getUserInfo(otherUid!);
     setState(() {});
@@ -96,14 +100,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .doc(widget.roomId)
         .collection("messages");
 
+    final user = currentUser;
+    if (user == null) return;
     await msgRef.add({
       "message": text,
       "imageUrl": imageUrl,
-      "senderUid": currentUser.uid,
+      "senderUid": user.uid,
       "senderName": _currentUserData?["name"],
       "senderPhoto": _currentUserData?["profileImageUrl"],
       "time": Timestamp.now(),
-      "seenBy": [currentUser.uid],
+      "seenBy": [user.uid],
     });
 
     // 채팅방 업데이트
@@ -156,12 +162,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .collection("messages")
         .doc(messageId)
         .update({
-      "seenBy": FieldValue.arrayUnion([currentUser.uid])
+      "seenBy": FieldValue.arrayUnion([currentUser?.uid ?? ""])
     });
   }
 
   Widget _buildReadStatus(List seenBy) {
-    final otherSeen = seenBy.any((id) => id != currentUser.uid);
+    final user = currentUser;
+    if (user == null) return const SizedBox.shrink();
+    final otherSeen = seenBy.any((id) => id != user.uid);
 
     return Padding(
       padding: const EdgeInsets.only(top: 3, right: 5),
@@ -181,12 +189,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // ---------------------------
   Future<void> _updateTyping(bool typing) async {
     if (otherUid == null) return;
+    final user = currentUser;
+    if (user == null) return;
 
     await FirebaseFirestore.instance
         .collection("chatRooms")
         .doc(widget.roomId)
         .collection("typing")
-        .doc(currentUser.uid)
+        .doc(user.uid)
         .set({"typing": typing});
   }
 
@@ -236,9 +246,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             title: const Text("차단하기"),
             onTap: () async {
               Navigator.pop(context);
+              final user = currentUser;
+              if (user == null) return;
               await FirebaseFirestore.instance
                   .collection("users")
-                  .doc(currentUser.uid)
+                  .doc(user.uid)
                   .update({
                 "blocked": FieldValue.arrayUnion([otherUid])
               });
@@ -253,7 +265,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               await FirebaseFirestore.instance
                   .collection("reports")
                   .add({
-                "reporter": currentUser.uid,
+                "reporter": currentUser?.uid ?? "",
                 "target": otherUid,
                 "roomId": widget.roomId,
                 "time": Timestamp.now(),
@@ -269,7 +281,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   .collection("chatRooms")
                   .doc(widget.roomId)
                   .update({
-                "users": FieldValue.arrayRemove([currentUser.uid])
+                "users": FieldValue.arrayRemove([currentUser?.uid ?? ""])
               });
               Navigator.pop(context);
             },
@@ -361,7 +373,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   itemCount: msgs.length,
                   itemBuilder: (context, index) {
                     final m = msgs[index];
-                    final bool isMe = m["senderUid"] == currentUser.uid;
+                    final bool isMe = m["senderUid"] == currentUser?.uid;
 
                     _markAsSeen(m.id);
 

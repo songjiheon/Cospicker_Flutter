@@ -21,7 +21,9 @@ class _EditGenderScreenState extends State<EditGenderScreen> {
 
   //파이어베이스에서 user 값 가져오기
   Future<void> _loadGender() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final uid = user.uid;
     final data = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
     setState(() {
@@ -41,7 +43,14 @@ class _EditGenderScreenState extends State<EditGenderScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인 상태가 아닙니다.')),
+        );
+        return;
+      }
+      final uid = user.uid;
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)

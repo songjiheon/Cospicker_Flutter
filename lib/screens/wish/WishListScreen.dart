@@ -14,7 +14,13 @@ class _WishListScreenState extends State<WishListScreen>
   late TabController _tabController;
   final _auth = FirebaseAuth.instance;
 
-  String get _uid => _auth.currentUser!.uid;
+  String get _uid {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    return user.uid;
+  }
 
   @override
   void initState() {

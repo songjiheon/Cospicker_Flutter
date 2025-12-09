@@ -59,7 +59,11 @@ class _PaymentLoadingScreenState extends State<PaymentLoadingScreen> {
 // 🔥 Firestore에 예약 정보 저장 함수
 // -------------------------------------------------------
 Future<void> saveReservation(Map<String, dynamic> data) async {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    throw Exception('로그인 상태가 아닙니다.');
+  }
+  final uid = user.uid;
 
   await FirebaseFirestore.instance.collection("reservation").add({
     "uid": uid,

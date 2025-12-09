@@ -37,7 +37,7 @@ class _RestaurantReviewScreenState
       "text": textController.text.trim(),
       "images": [],
       "createdAt": FieldValue.serverTimestamp(),
-      "userId": FirebaseAuth.instance.currentUser!.uid,
+      "userId": FirebaseAuth.instance.currentUser?.uid ?? "",
     });
 
     setState(() => isSaving = false);

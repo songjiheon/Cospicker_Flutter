@@ -16,7 +16,8 @@ class ChatRoomScreen extends StatefulWidget {
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final currentUser = FirebaseAuth.instance.currentUser!;
+  
+  User? get currentUser => FirebaseAuth.instance.currentUser;
   Map<String, dynamic>? _currentUserData;
 
   @override
@@ -27,7 +28,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   // 현재 사용자 정보 로드
   Future<void> _loadCurrentUser() async {
-    _currentUserData = await _getUserInfo(currentUser.uid);
+    final user = currentUser;
+    if (user == null) return;
+    _currentUserData = await _getUserInfo(user.uid);
     setState(() {});
   }
 
@@ -57,7 +60,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     await msgRef.add({
       "message": text,
       "imageUrl": imageUrl,
-      "senderUid": currentUser.uid,
+      "senderUid": currentUser?.uid ?? "",
       "senderName": senderName,
       "senderPhoto": senderPhoto,
       "time": Timestamp.now(),
@@ -138,7 +141,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   padding: const EdgeInsets.all(10),
                   itemBuilder: (context, index) {
                     final data = msgs[index];
-                    final bool isMe = data["senderUid"] == currentUser.uid;
+                    final bool isMe = data["senderUid"] == currentUser?.uid;
 
                     return FutureBuilder<Map<String, dynamic>>(
                       future: isMe

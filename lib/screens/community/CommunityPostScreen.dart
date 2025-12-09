@@ -187,7 +187,11 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
   // 🔥 FIXED: DM 방 생성 — lastTime을 null로 설정해야 목록에 정상 표시됨
   // =============================================================
   Future<String> _createChatRoom(String otherUid) async {
-    final myUid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('로그인 상태가 아닙니다.');
+    }
+    final myUid = user.uid;
 
     final roomId = myUid.compareTo(otherUid) < 0
         ? "${myUid}_$otherUid"
@@ -353,7 +357,14 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
               icon: const Icon(Icons.send),
               onPressed: () async {
                 final otherUid = post!.uid;
-                final myUid = FirebaseAuth.instance.currentUser!.uid;
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('로그인 상태가 아닙니다.')),
+                  );
+                  return;
+                }
+                final myUid = user.uid;
 
                 if (otherUid == myUid) {
                   ScaffoldMessenger.of(context).showSnackBar(
