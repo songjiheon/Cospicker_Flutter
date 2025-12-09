@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class CommunityWriteScreen extends StatefulWidget {
   @override
@@ -13,210 +13,121 @@ class CommunityWriteScreen extends StatefulWidget {
 class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
+  final TextEditingController tagController = TextEditingController();
+
+  String? selectedPostType;
+  List<String> postTypes = ["자유", "질문", "정보"]; // 예시
 
   File? selectedImage;
   String? selectedLocation;
-  List<String> selectedTags = [];
+  String? selectedTag;
 
-  String? selectedPostType;
-  List<String> postTypes = ["자유", "질문", "정보"];
-
-  List<String> availableTags = [
-    "플래너", "인기", "숙소", "맛집", "여행", "맛집추천", "꿀팁"
+  final List<String> predefinedTags = [
+    "맛집",
+    "숙소",
+    "정보",
+    "질문",
+    "자유",
+    "일정",
+    "후기",
   ];
 
-  // ----------------- 이미지 선택 -----------------
+  final ImagePicker _picker = ImagePicker();
+
+  // 사진 선택
   Future<void> pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() => selectedImage = File(image.path));
+      setState(() {
+        selectedImage = File(image.path);
+      });
     }
   }
 
-  // ----------------- 태그 선택 BottomSheet -----------------
-  void _openTagSelector() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) {
-        return StatefulBuilder(builder: (context, setModalState) {
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const Text("태그 선택",
-                    style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 20),
-
-                Wrap(
-                  spacing: 10,
-                  children: availableTags.map((tag) {
-                    final isSelected = selectedTags.contains(tag);
-                    return ChoiceChip(
-                      label: Text(tag),
-                      selected: isSelected,
-                      selectedColor: Colors.green.shade200,
-                      onSelected: (v) {
-                        setModalState(() {
-                          if (v) {
-                            selectedTags.add(tag);
-                          } else {
-                            selectedTags.remove(tag);
-                          }
-                        });
-                        setState(() {});
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("완료"),
-                ),
-              ],
-            ),
-          );
-        });
-      },
-    );
-  }
-
-  // ----------------- 위치 선택 BottomSheet -----------------
-  void _openLocationSelector() {
-    final locations = ["서울", "경기", "강원", "부산", "대전", "제주"];
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) {
-        return ListView(
-          shrinkWrap: true,
-          children: locations.map((loc) {
-            return ListTile(
-              title: Text(loc),
-              onTap: () {
-                setState(() => selectedLocation = loc);
-                Navigator.pop(context);
-              },
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-
-  // ----------------- keywords 자동 생성 -----------------
-  List<String> _generateKeywords(String text) {
-    List<String> keywords = [];
-    List<String> words = text.split(RegExp(r"\s+"));
-
-    for (var w in words) {
-      if (w.trim().isNotEmpty) keywords.add(w.trim());
-    }
-    return keywords;
-  }
-
-  // ----------------- 게시글 업로드 -----------------
-  Future<void> _uploadPost() async {
-    String title = titleController.text.trim();
-    String content = contentController.text.trim();
-
-    if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("제목과 내용을 입력해주세요.")));
-      return;
-    }
-
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
-
-    final userData = userDoc.data() ?? {};
-    final userName = userData['name'] ?? '익명';
-    final profileUrl = userData['profileImageUrl'] ?? '';
-
-    // 이미지 업로드
-    String? imageUrl;
-    if (selectedImage != null) {
-      final fileRef = FirebaseStorage.instance.ref().child(
-          "postImages/${DateTime.now().millisecondsSinceEpoch}.jpg");
-      await fileRef.putFile(selectedImage!);
-      imageUrl = await fileRef.getDownloadURL();
-    }
-
-    final postRef = FirebaseFirestore.instance.collection("Posts").doc();
-    final postId = postRef.id;
-
-    // keywords 생성 (제목 + 내용 + 태그까지 포함)
-    final keywords = {
-      ..._generateKeywords(title),
-      ..._generateKeywords(content),
-      ...selectedTags
-    }.toList();
-
-    await postRef.set({
-      "postId": postId,
-      "uid": currentUser.uid,
-      "title": title,
-      "content": content,
-      "createdAt": Timestamp.now(),
-      "likeCount": 0,
-      "commentCount": 0,
-      "profileUrl": profileUrl,
-      "userName": userName,
-      "imageUrl": imageUrl ?? "",
-      "postType": selectedPostType ?? "자유",
-      "location": selectedLocation ?? "",
-      "tags": selectedTags,
-      "keywords": keywords, // 🔥 검색 최적화 핵심
-    });
-
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("게시글이 등록되었습니다.")),
-    );
-  }
-
-  // -------------------------- UI --------------------------
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title:
-        const Text("글쓰기", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("글쓰기", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios),
+          icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
           TextButton(
-            onPressed: _uploadPost,
-            child: const Text(
+            onPressed: () async  {
+              // 완료 버튼 클릭 → 파이어베이스 업로드
+              String title = titleController.text.trim();
+              String content = contentController.text.trim();
+
+              if (title.isEmpty || content.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("제목과 내용을 입력해주세요")),
+                );
+                return;
+              }
+              String? imageUrl;
+
+              if (selectedImage != null) {
+                final storageRef = FirebaseStorage.instance
+                    .ref()
+                    .child('postImages/${DateTime.now().millisecondsSinceEpoch}.jpg');
+                await storageRef.putFile(selectedImage!);
+                imageUrl = await storageRef.getDownloadURL();
+              }
+              final currentUser = FirebaseAuth.instance.currentUser;
+              if (currentUser == null) return;
+
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users') // 유저 정보 컬렉션
+                  .doc(currentUser.uid)
+                  .get();
+
+              final userData = userDoc.data();
+              final userName = userData?['name'] ?? '익명';
+              final profileUrl = userData?['profileImageUrl'] ?? '';
+
+
+              final docRef = FirebaseFirestore.instance.collection('Posts').doc();
+              final postId = docRef.id;
+
+              await docRef.set({
+                'postId': postId,
+                'uid': currentUser.uid,
+                'title': title,
+                'content': content,
+                'likeCount': 0,
+                'commentCount': 0,
+                'createdAt': FieldValue.serverTimestamp(),
+                'postType': selectedPostType ?? "자유",
+                'imageUrl': imageUrl ?? "",
+                'location': selectedLocation ?? "",
+                'tag': selectedTag ?? "",
+                'userName': userName,
+                'profileUrl': profileUrl ?? '',
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("게시글이 성공적으로 등록되었습니다!"),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+
+            child: Text(
               "완료",
-              style: TextStyle(
-                  fontWeight: FontWeight.bold, color: Color(0xFF296044)),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF296044)),
             ),
           )
         ],
       ),
-
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -224,106 +135,165 @@ class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
             DropdownButtonFormField<String>(
               value: selectedPostType,
               items: postTypes
-                  .map((type) =>
-                  DropdownMenuItem(value: type, child: Text(type)))
+                  .map((type) => DropdownMenuItem(
+                value: type,
+                child: Text(type),
+              ))
                   .toList(),
-              onChanged: (v) => setState(() => selectedPostType = v),
+              onChanged: (value) {
+                setState(() {
+                  selectedPostType = value;
+                });
+              },
               decoration: InputDecoration(
                 hintText: "글 유형 선택",
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6)),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
               ),
             ),
-
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // 제목
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "제목을 입력하세요",
                 border: InputBorder.none,
               ),
-              style: const TextStyle(fontSize: 17),
+              style: TextStyle(fontSize: 16),
             ),
-
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
 
             // 내용
             TextField(
               controller: contentController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 hintText: "내용을 입력하세요",
                 border: InputBorder.none,
               ),
               minLines: 6,
               maxLines: null,
+              keyboardType: TextInputType.multiline,
+              style: TextStyle(fontSize: 15),
             ),
+            SizedBox(height: 20),
 
-            const SizedBox(height: 20),
-
-            // 아이콘 버튼 (사진, 위치, 태그)
+            // 사진 / 위치 / 태그
             Row(
               children: [
                 IconButton(
-                    icon: const Icon(Icons.photo, size: 30),
-                    onPressed: pickImage),
-                const SizedBox(width: 10),
+                  icon: Image.asset("assets/photo_icon.png", width: 32, height: 32),
+                  onPressed: pickImage,
+                ),
+                SizedBox(width: 20),
                 IconButton(
-                    icon: const Icon(Icons.location_on, size: 30),
-                    onPressed: _openLocationSelector),
-                const SizedBox(width: 10),
+                  icon: Image.asset("assets/location_icon.png", width: 32, height: 32),
+                  onPressed: () {
+                    // 위치 선택 기능
+                  },
+                ),
+                SizedBox(width: 20),
                 IconButton(
-                    icon: const Icon(Icons.tag, size: 30),
-                    onPressed: _openTagSelector),
+                  icon: Image.asset("assets/tag_icon.png", width: 32, height: 32),
+                  onPressed: () => _openTagSheet(),
+                ),
               ],
             ),
+            SizedBox(height: 12),
 
-            const SizedBox(height: 10),
-
-            // 이미지 미리보기
+            // 선택한 사진 미리보기
             if (selectedImage != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(selectedImage!,
-                    width: double.infinity, height: 200, fit: BoxFit.cover),
+              Image.file(
+                selectedImage!,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
               )
             else
               Container(
                 width: double.infinity,
                 height: 200,
-                decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.image,
-                    size: 50, color: Colors.black26),
+                color: Color(0xFFEFEFEF),
+                child: Icon(Icons.image, size: 50, color: Colors.grey.shade400),
               ),
 
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
 
-            // 위치 표시
-            Text(
-              "위치: ${selectedLocation ?? "선택 안됨"}",
-              style: const TextStyle(color: Colors.black87),
-            ),
+            // 선택된 위치
+            if (selectedLocation != null)
+              Text("위치: $selectedLocation", style: TextStyle(fontSize: 14, color: Color(0xFF444)))
+            else
+              Text("위치: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444))),
 
-            const SizedBox(height: 4),
+            SizedBox(height: 5),
 
-            // 태그 표시
-            Wrap(
-              spacing: 8,
-              children: selectedTags
-                  .map((tag) => Chip(
-                label: Text(tag),
-                onDeleted: () {
-                  setState(() => selectedTags.remove(tag));
-                },
-              ))
-                  .toList(),
-            ),
+            // 선택된 태그
+            if (selectedTag != null)
+              Text("태그: $selectedTag", style: TextStyle(fontSize: 14, color: Color(0xFF444)))
+            else
+              Text("태그: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444))),
           ],
         ),
       ),
+    );
+  }
+
+  void _openTagSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "태그 선택",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: predefinedTags.map((tag) {
+                  final selected = tag == selectedTag;
+                  return ChoiceChip(
+                    label: Text(tag),
+                    selected: selected,
+                    onSelected: (_) {
+                      setState(() => selectedTag = selected ? null : tag);
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: tagController,
+                decoration: InputDecoration(
+                  hintText: "직접 입력 (예: 제주맛집)",
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.check),
+                    onPressed: () {
+                      final custom = tagController.text.trim();
+                      if (custom.isEmpty) return;
+                      setState(() => selectedTag = custom);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

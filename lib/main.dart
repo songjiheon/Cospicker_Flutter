@@ -1,4 +1,4 @@
-import 'package:cospicker/screens/chat/ChatRoomListScreen.dart';
+import 'package:cospicker/screens/chat/ChatRoomList.dart';
 import 'package:cospicker/screens/community/CommunityMainScreen.dart';
 import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
@@ -28,15 +28,14 @@ import 'screens/profile/info/EditPhoneNumber.dart';
 import 'screens/profile/info/EditBirth.dart';
 import 'screens/profile/info/EditGender.dart';
 import 'screens/profile/info/EditPassword.dart';
-import 'screens/profile/notice//Notice.dart';
-import 'screens/profile/recent/RecentViewScreen.dart';
-import 'screens/profile/notifications/NotificationScreen.dart';
+import 'screens/profile/info/Notice.dart';
+
 // Community
-import 'screens/profile/post/MyPost.dart';
-import 'screens/profile/comment/MyComment.dart';
+import 'screens/community/MyPost.dart';
+import 'screens/community/MyComment.dart';
 
 // Chat
-import 'screens/chat/ChatRoomScreen.dart';
+import 'screens/chat/ChatRoom.dart';
 
 // WishList
 import 'screens/wish/WishListScreen.dart';
@@ -50,8 +49,6 @@ import 'screens/stay/StayDatePeopleScreen.dart';
 import 'screens/stay/StayReviewScreen.dart';
 import 'screens/stay/StayRoomListScreen.dart';
 import 'screens/stay/StayReviewPolicyScreen.dart';
-import 'screens/stay/StayPaymentScreen.dart';
-import 'screens/payment/PaymentCompleteScreen.dart';
 
 // Restaurant
 import 'screens/restaurant/RestaurantListScreen.dart';
@@ -61,7 +58,6 @@ import 'screens/restaurant/RestaurantSearchScreen.dart';
 import 'screens/restaurant/RestaurantMapScreen.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -97,10 +93,8 @@ class MyApp extends StatelessWidget {
         '/editBirth': (context) => EditBirthScreen(),
         '/editPassword': (context) => EditPasswordScreen(),
         '/notice': (context) => NoticeScreen(),
-        '/recentViewed': (context) => RecentViewedScreen(),
         '/myPost': (context) => MyPostsScreen(),
-        '/myComment': (context) => MyCommentScreen(),
-        '/notifications': (context) => NotificationScreen(),
+        '/myComment': (context) => MyCommentsScreen(),
 
         // Community
         '/community': (context) => CommunityMainScreen(),
@@ -119,8 +113,10 @@ class MyApp extends StatelessWidget {
         },
 
         // Chat
-        '/chatRoomList': (context) => ChatRoomListScreen(),
-
+        '/chatRoomList': (context) {
+          final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
+          return ChatRoomListScreen(uid: uid);
+        },
         '/chatRoom': (context) {
           final roomId = ModalRoute.of(context)!.settings.arguments as String;
           return ChatRoomScreen(roomId: roomId);

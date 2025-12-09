@@ -24,21 +24,24 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
   String profileImageUrl = "";
   String userFriendCode = "";
 
+
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
   }
 
-  // ===============================
-  // Firebase 사용자 정보 불러오기
-  // ===============================
+
+  //파이어베이스에서 user 정보 얻어오기
   Future<void> _loadUserInfo() async {
+    //파이버베이스 uid 얻기
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
+    //파이어베이스 data 얻기
     var data = await FirebaseFirestore.instance.collection('users').doc(uid).get();
 
+    //파이어베이스에서 data 얻어와서 변수에 저장
     if (data.exists) {
       final userData = data.data() as Map<String, dynamic>;
       setState(() {
@@ -55,17 +58,15 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
             userBirth = DateFormat('yyyy-MM-dd').format(birth.toDate());
           } else if (birth is String) {
             userBirth = birth;
-          } else {
-            userBirth = "생년월일 없음";
+          }else{
+            userBirth="생년원일 없음";
           }
         }
       });
     }
   }
 
-  // ===============================
-  // 프로필 이미지 업데이트
-  // ===============================
+  //파이어베이스 user 프로필 업데이트
   Future<void> _updateProfileImage() async {
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -82,7 +83,6 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'profileImageUrl': downloadUrl,
       });
-
       setState(() {
         profileImageUrl = downloadUrl;
       });
@@ -91,88 +91,8 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
     }
   }
 
-  // ===============================
-  // 전체 로그아웃 기능
-  // ===============================
-  Future<void> _logoutAllDevices() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
 
-    // 모든 기기에서 로그아웃하도록 토큰 발행
-    final randomToken = DateTime.now().millisecondsSinceEpoch.toString();
-
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .update({'logoutToken': randomToken});
-
-    // 현재 기기 로그아웃
-    await FirebaseAuth.instance.signOut();
-
-    if (mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    }
-  }
-
-  // 전체 로그아웃 Dialog
-  void _showLogoutAllDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text("전체 로그아웃",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 14),
-                const Text(
-                  "정말 모든 기기에서 로그아웃 하시겠습니까?",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15),
-                ),
-                const SizedBox(height: 24),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("취소"),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          await _logoutAllDevices();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                        ),
-                        child: const Text(
-                          "로그아웃",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ===============================
-  // UI
-  // ===============================
+  //UI
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,7 +112,7 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
         ),
         leading: IconButton(
           icon: Image.asset("assets/back_icon.png", width: 22, height: 22),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // 뒤로가기
         ),
       ),
 
@@ -207,9 +127,11 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
                 children: [
                   Stack(
                     children: [
+                      // 프로필 이미지
                       ClipRRect(
                         borderRadius: BorderRadius.circular(35),
-                        child: profileImageUrl.isNotEmpty
+                        child:
+                        profileImageUrl.isNotEmpty
                             ? Image.network(
                           profileImageUrl,
                           width: 70,
@@ -222,12 +144,16 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
                           height: 70,
                           fit: BoxFit.cover,
                         ),
-                      ),
+                        ),
+                      // 이미지 변경 버튼
                       Positioned(
                         bottom: 0,
                         right: 0,
                         child: GestureDetector(
-                          onTap: _updateProfileImage,
+                          onTap: () {
+                            _updateProfileImage();
+                            print("이미지 변경 클릭");
+                          },
                           child: Container(
                             width: 24,
                             height: 24,
@@ -235,8 +161,11 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
                               color: Colors.blue,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt,
-                                color: Colors.white, size: 14),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 14,
+                            ),
                           ),
                         ),
                       ),
@@ -249,53 +178,52 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
                   ),
                 ],
               ),
-
+              // 회원 정보
               const SizedBox(height: 20),
-              const Text("회원 정보",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                "회원 정보",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 10),
-
               _infoRow(context, "이름", '/editName', userName),
               _infoRow(context, "휴대폰 번호", '/editPhone', userPhone),
               _infoRow(context, "생년월일", '/editBirth', userBirth),
               _infoRow(context, "성별", '/editGender', userGender),
               _infoRow(context, "친구코드", '', userFriendCode, showArrow: false),
 
-              const SizedBox(height: 10),
-              Container(height: 10, color: Color(0xFFF5F5F5)),
 
+              const SizedBox(height: 10),
+              Container(height: 10, color: const Color(0xFFF5F5F5)),
+
+              // 계정 보안
               const SizedBox(height: 20),
-              const Text("계정 보안",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                "계정 보안",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
               _infoRow(context, "비밀번호 변경", '/editPassword', " ", showArrow: true),
 
               const SizedBox(height: 20),
 
-              // ===============================
-              // 전체 로그아웃 버튼 (수정된 부분)
-              // ===============================
-              GestureDetector(
-                onTap: _showLogoutAllDialog,
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        "접속 기기 관리",
-                        style: TextStyle(fontSize: 16),
-                      ),
+              // 접속 기기 관리
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "접속 기기 관리",
+                      style: TextStyle(fontSize: 16),
                     ),
-                    const Text(
-                      "전체 로그아웃",
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF406EFF),
-                      ),
+                  ),
+                  Text(
+                    "전체 로그아웃",
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF406EFF),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-
               const SizedBox(height: 4),
               const Text(
                 "로그인 된 모든 기기에서 로그아웃 됩니다.",
@@ -303,17 +231,25 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
               ),
 
               const SizedBox(height: 10),
-              Container(height: 10, color: Color(0xFFF5F5F5)),
+              Container(height: 10, color: const Color(0xFFF5F5F5)),
+
+              // 회원 탈퇴
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  "회원탈퇴",
+                  style: TextStyle(fontSize: 15, color: Color(0xFFCC0000)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-
-  // ===============================
-  // 정보 Row 위젯
-  // ===============================
   Widget _infoRow(
       BuildContext context,
       String title,
@@ -328,10 +264,15 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
           final result = await Navigator.pushNamed(context, route);
           if (result != null && result is String && result.isNotEmpty) {
             setState(() {
-              if (route == '/editName') userName = result;
-              else if (route == '/editBirth') userBirth = result;
-              else if (route == '/editPhone') userPhone = result;
-              else if (route == '/editGender') userGender = result;
+              if (route == '/editName') {
+                userName = result;
+              } else if (route == '/editBirth') {
+                userBirth = result;
+              } else if (route == '/editPhone') {
+                userPhone = result;
+              } else if (route == '/editGender') {
+                userGender = result;
+              }
             });
           }
         }
@@ -341,10 +282,13 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
         child: Row(
           children: [
             Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 16)),
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 16),
+              ),
             ),
             Text(
-              value.isNotEmpty ? value : "미입력",
+              value.isNotEmpty ? value : "미입력", // 값이 없을 때 "미입력" 표시
               style: const TextStyle(fontSize: 16, color: Color(0xFF666666)),
             ),
             if (showArrow) ...[
@@ -356,4 +300,6 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
       ),
     );
   }
+
 }
+
