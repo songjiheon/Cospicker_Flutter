@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:cospicker/screens/stay/StayPaymentScreen.dart';
 
 class StayRoomDetailScreen extends StatelessWidget {
   final Map<String, dynamic> roomData;
-  final String date;
-  final int people;
+  final String? date;        // nullable 로 변경 → 다시예약 때 null일 수 있음
+  final int? people;         // nullable → 기본값 필요
 
   const StayRoomDetailScreen({
     super.key,
     required this.roomData,
-    required this.date,
-    required this.people,
+    this.date,
+    this.people,
   });
 
   @override
   Widget build(BuildContext context) {
+    // ---- 기본값 설정 ----
+    final safeDate = date ?? "날짜를 선택해주세요";
+    final safePeople = people ?? 2;
+
     final List images = [roomData["roomImage"] ?? ""];
 
     return Scaffold(
@@ -31,7 +36,32 @@ class StayRoomDetailScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {},
+            onPressed: () {
+              // 날짜 선택 안된 경우 경고
+              if (date == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("예약하려면 날짜를 먼저 선택해주세요."),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StayPaymentScreen(
+                    paymentData: {
+                      "roomName": roomData["name"],
+                      "price": roomData["price"],
+                      "date": safeDate,
+                      "people": safePeople,
+                    },
+                  ),
+                ),
+              );
+            },
             child: const Text(
               "예약하기",
               style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
@@ -65,7 +95,7 @@ class StayRoomDetailScreen extends StatelessWidget {
                   },
                 ),
 
-                // 뒤로가기
+                // 뒤로가기 버튼
                 Positioned(
                   top: 40,
                   left: 16,
@@ -78,13 +108,14 @@ class StayRoomDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // 스크롤 영역
+          // =================== 스크롤 영역 ===================
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+
                   // 객실명
                   Text(
                     roomData["name"] ?? "",
@@ -95,16 +126,19 @@ class StayRoomDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
 
-                  // 날짜, 인원
+                  // 날짜 & 인원
                   Row(
                     children: [
                       const Icon(Icons.calendar_month, size: 18),
                       const SizedBox(width: 6),
-                      Text(date, style: const TextStyle(fontSize: 14)),
+                      Text(
+                        safeDate,
+                        style: const TextStyle(fontSize: 14),
+                      ),
                       const Spacer(),
                       const Icon(Icons.people_alt_outlined, size: 18),
                       const SizedBox(width: 4),
-                      Text("$people명"),
+                      Text("$safePeople명"),
                     ],
                   ),
 
@@ -156,6 +190,7 @@ class StayRoomDetailScreen extends StatelessWidget {
                   _optionItem(Icons.tv, "TV / OTT 시청 가능"),
                   _optionItem(Icons.wifi, "무료 Wi-Fi 제공"),
                   _optionItem(Icons.local_parking, "주차장 이용 가능"),
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -166,7 +201,7 @@ class StayRoomDetailScreen extends StatelessWidget {
     );
   }
 
-  // -------------------- 옵션 박스 --------------------
+  // -------------------- 옵션 아이템 --------------------
   Widget _optionItem(IconData icon, String text) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
