@@ -36,7 +36,7 @@ Flutter 기반으로 리빌딩(Migration) 되었습니다.
 
 팀원 : 최동렬
 
-팀원 : 송지헌 - 서버 구축, API 연동동
+팀원 : 송지헌 - 서버 구축, API 연동
 
 
 
@@ -56,60 +56,101 @@ IDE : Android Studio
 
 ```plaintext
 lib/
+├── main.dart
+├── firebase_options.dart
+│
+├── models/
+│   └── content_type.dart
 │
 ├── screens/
-│   │
-│   ├── auth/                        # 🔐 로그인 · 회원가입
+│   ├── auth/
 │   │   ├── LoginScreen.dart
 │   │   ├── SignupScreen.dart
 │   │   └── SignupComplete.dart
 │   │
-│   ├── chat/                        # 💬 채팅
+│   ├── chat/
+│   │   ├── BlockedUsersScreen.dart
+│   │   ├── ChatRoomListScreen.dart
+│   │   ├── ChatRoomScreen.dart
 │   │   ├── ChatRoom.dart
-│   │   ├── ChatRoomList.dart
 │   │   └── CreateChatRoom.dart
 │   │
-│   ├── community/                   # 📝 커뮤니티
+│   ├── community/
 │   │   ├── CommunityMainScreen.dart
-│   │   ├── CommunityPost.dart
-│   │   ├── CommunityWriting.dart
-│   │   ├── MyComment.dart
-│   │   └── MyPost.dart
+│   │   ├── CommunityPostScreen.dart
+│   │   ├── CommunitySearchScreen.dart
+│   │   ├── CommunitySearchDetailScreen.dart
+│   │   └── CommunityWriting.dart
 │   │
-│   ├── home/                        # 🏠 홈 화면
+│   ├── home/
 │   │   └── HomeScreen.dart
 │   │
-│   ├── profile/                     # 👤 프로필 & 정보 수정
+│   ├── near/
+│   │   └── NearMapScreen.dart
+│   │
+│   ├── payment/
+│   │   ├── PaymentLoadingScreen.dart
+│   │   └── PaymentCompleteScreen.dart
+│   │
+│   ├── profile/
+│   │   ├── comment/
+│   │   │   └── MyComment.dart
+│   │   │
 │   │   ├── Info/
 │   │   │   ├── EditBirth.dart
 │   │   │   ├── EditGender.dart
 │   │   │   ├── EditName.dart
 │   │   │   ├── EditNickname.dart
 │   │   │   ├── EditPassword.dart
-│   │   │   ├── EditPhoneNumber.dart
+│   │   │   └── EditPhoneNumber.dart
+│   │   │
+│   │   ├── notice/
 │   │   │   ├── Notice.dart
-│   │   │   ├── NoticeDetail.dart
-│   │   │   ├── MyinfoScreen.dart
-│   │   │   └── ProfileScreen.dart
+│   │   │   └── NoticeDetail.dart
+│   │   │
+│   │   ├── notifications/
+│   │   │   └── NotificationScreen.dart
+│   │   │
+│   │   ├── post/
+│   │   │   └── MyPost.dart
+│   │   │
+│   │   ├── recent/
+│   │   │   └── RecentViewScreen.dart
+│   │   │
+│   │   └── reservation/
+│   │       ├── MyinfoScreen.dart
+│   │       └── ProfileScreen.dart
+│   │
+│   ├── restaurant/     
+│   │   ├── RestaurantDetailScreen.dart
+│   │   ├── RestaurantListScreen.dart
+│   │   ├── RestaurantMapScreen.dart
+│   │   ├── RestaurantReviewScreen.dart
+│   │   └── RestaurantSearchScreen.dart
 │   │
 │   ├── splash/
 │   │   └── SplashScreen.dart
 │   │
-│   ├── stay/                        # 🏨 숙소 기능 (새로 추가됨)
-│   │   ├── StaySearchScreen.dart        # 검색 (지역, 날짜, 인원)
-│   │   ├── StayListScreen.dart          # 숙소 리스트
-│   │   ├── StayDetailScreen.dart        # 숙소 상세 화면
-│   │   ├── StayDatePeopleScreen.dart    # 날짜·인원 선택 팝업
-│   │   ├── StayReviewScreen.dart        # 리뷰 전체보기
-│   │   ├── StayReviewPolicyScreen.dart  # 리뷰 정책 안내
-│   │   ├── StayRoomListScreen.dart      # 모든 객실 보기
-│   │   └── StayRoomDetailScreen.dart    # 객실 상세 화면
+│   ├── stay/
+│   │   ├── StayDatePeopleScreen.dart
+│   │   ├── StayDetailScreen.dart
+│   │   ├── StayListScreen.dart
+│   │   ├── StayPaymentScreen.dart
+│   │   ├── StayReviewPolicyScreen.dart
+│   │   ├── StayReviewScreen.dart
+│   │   ├── StayRoomDetailScreen.dart
+│   │   ├── StayRoomListScreen.dart
+│   │   └── StaySearchScreen.dart
 │   │
-│   └── Widget/                       # 공통 UI 위젯
-│       └── BottomNavItem.dart
+│   ├── Widget/
+│   │   └── BottomNavItem.dart
+│   │
+│   └── wish/
+│       ├── WishListScreen.dart
+│       └── WishFolderDetailScreen.dart
 │
-├── firebase_options.dart             # Firebase 설정 파일
-└── main.dart                         # 라우팅 & 앱 시작점
+└── tools/
+    └── firebase_options.dart
 
 
 
@@ -132,6 +173,9 @@ Repo	설명
 🔹 https://github.com/songjiheon/Cospicker_Flutter  
 	최종 제출용 Flutter 버전  
 
+-----------------  
+🔹 https://console.firebase.google.com/project/travel-planner-app-e6167/overview?hl=ko&fb_gclid=Cj0KCQiAi9rJBhCYARIsALyPDts3UZX0kWVXE1WeBnU0TI44YW5LwZOjjcxTKmWQMrB8KCK6HigV72QaAsIOEALw_wcB  
+	firebase 주소  
 
 
 🏁 마무리
