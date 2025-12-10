@@ -254,7 +254,7 @@ class _StayListScreenState extends State<StayListScreen> {
               children: [
                 const Icon(Icons.calendar_month, size: 18),
                 const SizedBox(width: 6),
-                Text("날짜: $selectedDate | ${selectedPeople}명"),
+                Text("날짜: $selectedDate | $selectedPeople명"),
               ],
             ),
             _openDatePeopleScreen,
@@ -431,7 +431,7 @@ class _StayListScreenState extends State<StayListScreen> {
               width: 120,
               height: 120,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                 width: 120,
                 height: 120,
                 color: Colors.grey.shade300,

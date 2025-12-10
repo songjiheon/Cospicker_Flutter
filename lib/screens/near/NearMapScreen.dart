@@ -178,7 +178,9 @@ class _NearMapScreenState extends State<NearMapScreen> {
 
       if (_initialPosition == null) {
         Position pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
         );
         _initialPosition = LatLng(pos.latitude, pos.longitude);
         debugPrint("현재 위치: $_initialPosition");
@@ -198,8 +200,9 @@ class _NearMapScreenState extends State<NearMapScreen> {
 
     // 타입이 같을 시 로딩 x
     if (_dataLoadingStatus == DataStatus.success &&
-        _selectedContentType == type)
+        _selectedContentType == type) {
       return;
+    }
 
     if (!mounted) return;
     setState(() {
@@ -258,7 +261,9 @@ class _NearMapScreenState extends State<NearMapScreen> {
   void _moveToCurrentLocation() async {
     try {
       Position pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       _controller?.animateCamera(
@@ -528,14 +533,8 @@ class _NearMapScreenState extends State<NearMapScreen> {
             onMapCreated: (controller) => _controller = controller,
             // 맵 이동이 끝났을 때 현재 지도 중앙 기준으로 다시 로드
             onCameraIdle: () {
-              _controller?.getVisibleRegion().then((LatLngBounds bounds) {
-                final centerLat =
-                    (bounds.northeast.latitude + bounds.southwest.latitude) / 2;
-                final centerLng =
-                    (bounds.northeast.longitude + bounds.southwest.longitude) /
-                    2;
-                // 현재 지도의 중심 위치를 기준으로 다시 검색 (중앙 위치가 이전과 크게 바뀌었을 때)
-              });
+              // 현재 지도의 중심 위치를 기준으로 다시 검색 (중앙 위치가 이전과 크게 바뀌었을 때)
+              // TODO: 필요시 카메라 이동 후 자동 새로고침 구현
             },
           ),
 
@@ -596,7 +595,7 @@ class _NearMapScreenState extends State<NearMapScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
+                      color: Colors.black.withValues(alpha: 0.25),
                       spreadRadius: 2,
                       blurRadius: 10,
                       offset: const Offset(0, -2),

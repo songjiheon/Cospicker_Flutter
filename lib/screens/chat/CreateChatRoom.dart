@@ -37,6 +37,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
 
     if (userQuery.docs.isEmpty) {
       setState(() => loading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("해당 친구코드를 가진 사용자가 없습니다.")),
       );
@@ -48,6 +49,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
     // 🚫 자기 자신 추가 방지
     if (targetUid == widget.uid) {
       setState(() => loading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("자기 자신은 추가할 수 없습니다.")),
       );
@@ -65,6 +67,7 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
 
     if (roomDoc.exists) {
       setState(() => loading = false);
+      if (!mounted) return;
       Navigator.pushReplacementNamed(context, "/chatRoom", arguments: roomId);
       return;
     }
@@ -74,12 +77,15 @@ class _CreateChatRoomScreenState extends State<CreateChatRoomScreen> {
         .collection("chatRooms")
         .doc(roomId)
         .set({
-      "members": [widget.uid, targetUid],
+      "users": [widget.uid, targetUid],
       "createdAt": FieldValue.serverTimestamp(),
-      "lastMessage": "",
+      "lastMessage": "대화를 시작해보세요!",
+      "lastTime": FieldValue.serverTimestamp(),
+      "muteUsers": [],
     });
 
     setState(() => loading = false);
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, "/chatRoom", arguments: roomId);
   }
 

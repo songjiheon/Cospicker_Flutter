@@ -130,12 +130,19 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Icon(icon, size: 20),
+        child: Icon(icon, size: 22, color: Colors.black87),
       ),
     );
   }
@@ -175,61 +182,102 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
   // 하단 액션버튼 (저장 / 위치)
   // ---------------------------------------------------------
   Widget _actionButtons(Map data) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // 저장 버튼 (하단)
-        GestureDetector(
-          onTap: () {
-            if (isSaved) {
-              _unSaveFromFolder();
-            } else {
-              _openWishFolderSelector();
-            }
-          },
-          child: Column(
-            children: [
-              Icon(
-                isSaved ? Icons.favorite : Icons.favorite_border,
-                size: 28,
-                color: isSaved ? Colors.red : Colors.black,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "저장",
-                style: TextStyle(
-                    color: isSaved ? Colors.red : Colors.black,
-                    fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-
-        // 위치 버튼
-        GestureDetector(
-          onTap: () {
-            final lat = double.tryParse(data["mapy"].toString()) ?? 0.0;
-            final lng = double.tryParse(data["mapx"].toString()) ?? 0.0;
-
-            Navigator.pushNamed(
-              context,
-              "/restaurantMap",
-              arguments: {
-                "lat": lat,
-                "lng": lng,
-                "title": data["title"] ?? "",
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // 저장 버튼 (하단)
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                if (isSaved) {
+                  _unSaveFromFolder();
+                } else {
+                  _openWishFolderSelector();
+                }
               },
-            );
-          },
-          child: const Column(
-            children: [
-              Icon(Icons.location_on_outlined, size: 28),
-              SizedBox(height: 4),
-              Text("위치"),
-            ],
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSaved ? Colors.red.shade50 : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isSaved ? Icons.favorite : Icons.favorite_border,
+                      size: 28,
+                      color: isSaved ? Colors.red.shade600 : Colors.grey.shade700,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "저장",
+                      style: TextStyle(
+                        color: isSaved ? Colors.red.shade600 : Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ],
+
+          // 위치 버튼
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                final lat = double.tryParse(data["mapy"].toString()) ?? 0.0;
+                final lng = double.tryParse(data["mapx"].toString()) ?? 0.0;
+
+                Navigator.pushNamed(
+                  context,
+                  "/restaurantMap",
+                  arguments: {
+                    "lat": lat,
+                    "lng": lng,
+                    "title": data["title"] ?? "",
+                  },
+                );
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.location_on_outlined, size: 28, color: Colors.blue.shade600),
+                    const SizedBox(height: 6),
+                    Text(
+                      "위치",
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -353,10 +401,12 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
                 .orderBy("createdAt", descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData)
+              if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
-              if (snapshot.data!.docs.isEmpty)
+              }
+              if (snapshot.data!.docs.isEmpty) {
                 return const Center(child: Text("등록된 리뷰가 없습니다."));
+              }
 
               return ListView(
                 padding: const EdgeInsets.all(16),
@@ -455,9 +505,10 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
                       .orderBy("createdAt")
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData)
+                    if (!snapshot.hasData) {
                       return const Center(
                           child: CircularProgressIndicator());
+                    }
 
                     final docs = snapshot.data!.docs;
                     if (docs.isEmpty) {
@@ -474,7 +525,8 @@ class _RestaurantDetailScreenState extends State<RestaurantDetailScreen>
                           title: Text(folder["name"] ?? ""),
                           onTap: () async {
                             await _saveToFolder(folderDoc.id);
-                            if (mounted) Navigator.pop(context);
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
                           },
                         );
                       }).toList(),

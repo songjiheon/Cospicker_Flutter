@@ -15,6 +15,7 @@ class Post {
   final int likeCount;
   final int commentCount;
   final String imageUrl;
+  final String tag;
 
   Post({
     required this.postId,
@@ -28,6 +29,7 @@ class Post {
     required this.likeCount,
     required this.commentCount,
     required this.imageUrl,
+    required this.tag,
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -45,6 +47,7 @@ class Post {
       likeCount: data['likeCount'] ?? 0,
       commentCount: data['commentCount'] ?? 0,
       imageUrl: data['imageUrl'] ?? '',
+      tag: data['tag'] ?? '',
     );
   }
 }
@@ -184,6 +187,45 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
   }
 
   // =============================================================
+  // 게시글 수정 다이얼로그 (태그 포함)
+  // =============================================================
+  void _showEditDialog() {
+    final titleController = TextEditingController(text: post!.title);
+    final contentController = TextEditingController(text: post!.content);
+
+    final List<String> predefinedTags = [
+      "맛집",
+      "숙소",
+      "정보",
+      "질문",
+      "자유",
+      "일정",
+      "후기",
+    ];
+
+    final List<String> postTypes = ["자유", "질문", "정보"];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return _EditPostDialog(
+          titleController: titleController,
+          contentController: contentController,
+          initialTag: post!.tag.isEmpty ? null : post!.tag,
+          initialPostType: post!.postType,
+          predefinedTags: predefinedTags,
+          postTypes: postTypes,
+          postId: post!.postId,
+          onSave: () {
+            Navigator.pop(context);
+            _loadPost();
+          },
+        );
+      },
+    );
+  }
+
+  // =============================================================
   // 🔥 FIXED: DM 방 생성 — lastTime을 null로 설정해야 목록에 정상 표시됨
   // =============================================================
   Future<String> _createChatRoom(String otherUid) async {
@@ -234,6 +276,13 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         foregroundColor: Colors.black,
+        actions: [
+          if (FirebaseAuth.instance.currentUser?.uid == post?.uid)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () => _showEditDialog(),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -308,6 +357,27 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 태그 표시
+        if (post!.tag.isNotEmpty) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green.shade400, Colors.green.shade600],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '#${post!.tag}',
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Text(
           post!.title,
           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -348,40 +418,45 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
             ),
             Text("$likeCount"),
             const SizedBox(width: 20),
-            const Icon(Icons.chat_bubble_outline),
+            const Icon(Icons.chat_bubble_outline, color: Colors.grey),
             Text(" $commentCount"),
             const SizedBox(width: 20),
-
-            // DM 버튼
+            
+            // DM 버튼 - 항상 표시 (본인 게시글일 때는 클릭 시 메시지 표시)
             IconButton(
-              icon: const Icon(Icons.send),
+              icon: const Icon(Icons.send, color: Colors.blue, size: 28),
+              tooltip: "메시지 보내기",
               onPressed: () async {
                 final otherUid = post!.uid;
                 final user = FirebaseAuth.instance.currentUser;
+                
                 if (user == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('로그인 상태가 아닙니다.')),
                   );
                   return;
                 }
+                
                 final myUid = user.uid;
-
+                
+                // 본인 게시글이면 메시지 표시
                 if (otherUid == myUid) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text("본인에게 메시지를 보낼 수 없습니다.")),
+                    const SnackBar(content: Text("본인에게 메시지를 보낼 수 없습니다.")),
                   );
                   return;
                 }
 
                 final roomId = await _createChatRoom(otherUid);
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatRoomScreen(roomId: roomId),
-                  ),
-                );
+                if (context.mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatRoomScreen(roomId: roomId),
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -572,6 +647,156 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// 게시글 수정 다이얼로그 위젯
+class _EditPostDialog extends StatefulWidget {
+  final TextEditingController titleController;
+  final TextEditingController contentController;
+  final String? initialTag;
+  final String initialPostType;
+  final List<String> predefinedTags;
+  final List<String> postTypes;
+  final String postId;
+  final VoidCallback onSave;
+
+  const _EditPostDialog({
+    required this.titleController,
+    required this.contentController,
+    required this.initialTag,
+    required this.initialPostType,
+    required this.predefinedTags,
+    required this.postTypes,
+    required this.postId,
+    required this.onSave,
+  });
+
+  @override
+  State<_EditPostDialog> createState() => _EditPostDialogState();
+}
+
+class _EditPostDialogState extends State<_EditPostDialog> {
+  late String? selectedTag;
+  late String selectedPostType;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedTag = widget.initialTag;
+    selectedPostType = widget.initialPostType;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("게시글 수정"),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 제목
+            TextField(
+              controller: widget.titleController,
+              decoration: const InputDecoration(
+                labelText: "제목",
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // 내용
+            TextField(
+              controller: widget.contentController,
+              decoration: const InputDecoration(
+                labelText: "내용",
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 5,
+            ),
+            const SizedBox(height: 16),
+            
+            // 글 유형
+            DropdownButtonFormField<String>(
+              value: selectedPostType,
+              decoration: const InputDecoration(
+                labelText: "글 유형",
+                border: OutlineInputBorder(),
+              ),
+              items: widget.postTypes.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    selectedPostType = value;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            
+            // 태그
+            const Text("태그 선택", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: widget.predefinedTags.map((tag) {
+                final isSelected = tag == selectedTag;
+                return ChoiceChip(
+                  label: Text(tag),
+                  selected: isSelected,
+                  onSelected: (selected) {
+                    setState(() {
+                      selectedTag = selected ? tag : null;
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("취소"),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final newTitle = widget.titleController.text.trim();
+            final newContent = widget.contentController.text.trim();
+
+            if (newTitle.isEmpty || newContent.isEmpty) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("제목과 내용을 입력해주세요")),
+              );
+              return;
+            }
+
+            await FirebaseFirestore.instance
+                .collection('Posts')
+                .doc(widget.postId)
+                .update({
+              'title': newTitle,
+              'content': newContent,
+              'postType': selectedPostType,
+              'tag': selectedTag ?? '',
+            });
+
+            if (!context.mounted) return;
+            widget.onSave();
+          },
+          child: const Text("저장"),
+        ),
+      ],
     );
   }
 }

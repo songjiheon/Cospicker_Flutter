@@ -6,8 +6,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
 class CommunityWriteScreen extends StatefulWidget {
+  const CommunityWriteScreen({super.key});
+
   @override
-  _CommunityWriteScreenState createState() => _CommunityWriteScreenState();
+  createState() => _CommunityWriteScreenState();
 }
 
 class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
@@ -110,7 +112,9 @@ class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
                 'userName': userName,
                 'profileUrl': profileUrl ?? '',
               });
+              if (!context.mounted) return;
               Navigator.pop(context);
+              if (!context.mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text("게시글이 성공적으로 등록되었습니다!"),
@@ -133,7 +137,7 @@ class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
           children: [
             // 글 유형 선택
             DropdownButtonFormField<String>(
-              value: selectedPostType,
+              initialValue: selectedPostType,
               items: postTypes
                   .map((type) => DropdownMenuItem(
                 value: type,
@@ -221,17 +225,17 @@ class _CommunityWriteScreenState extends State<CommunityWriteScreen> {
 
             // 선택된 위치
             if (selectedLocation != null)
-              Text("위치: $selectedLocation", style: TextStyle(fontSize: 14, color: Color(0xFF444)))
+              Text("위치: $selectedLocation", style: TextStyle(fontSize: 14, color: Color(0xFF444444)))
             else
-              Text("위치: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444))),
+              Text("위치: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444444))),
 
             SizedBox(height: 5),
 
             // 선택된 태그
             if (selectedTag != null)
-              Text("태그: $selectedTag", style: TextStyle(fontSize: 14, color: Color(0xFF444)))
+              Text("태그: $selectedTag", style: TextStyle(fontSize: 14, color: Color(0xFF444444)))
             else
-              Text("태그: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444))),
+              Text("태그: 선택 안됨", style: TextStyle(fontSize: 14, color: Color(0xFF444444))),
           ],
         ),
       ),

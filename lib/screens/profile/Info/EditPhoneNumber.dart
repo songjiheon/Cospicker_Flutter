@@ -86,12 +86,6 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
     if (_verificationId == null || code.isEmpty) return;
 
     try {
-      // 인증 코드 검증 (자동 로그인 하지 않음)
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: code,
-      );
-
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
       debugPrint("현재 user.uid: ${user.uid}");
@@ -103,11 +97,13 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
           .update({'phoneNumber': _phoneController.text.trim()},
          );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("휴대폰 등록 완료")));
       Navigator.pop(context);
 
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("인증 실패: $e")));
     }
@@ -124,7 +120,6 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
   @override
   Widget build(BuildContext context) {
     // 번호 칸과 인증칸 같은 길이 지정
-    final fieldWidth = double.infinity;
     final fieldHeight = 50.0;
 
     return Scaffold(

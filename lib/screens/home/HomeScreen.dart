@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '/screens/near/NearMapScreen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -276,7 +275,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       }
 
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
       debugPrint("위치 가져오기 실패: $e");
@@ -438,95 +439,230 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 80),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "COSPICKER",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                // 헤더
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "안녕하세요, ${userName.isNotEmpty ? userName : '게스트'}님 👋",
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "오늘도 좋은 여행 되세요",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade400, Colors.purple.shade400],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.notifications_outlined, color: Colors.white),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // 검색창
                 _searchBar(),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // 상단 메뉴 (숙소 / 맛집 / 커뮤니티)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _topMenu("숙소", "assets/home_icon.png"),
-                    _topMenu("맛집", "assets/store_icon.png"),
-                    _topMenu("커뮤니티", "assets/community_icon.png"),
-                  ],
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade50, Colors.purple.shade50],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _topMenu("숙소", "assets/home_icon.png", Icons.hotel_outlined),
+                      _topMenu("맛집", "assets/store_icon.png", Icons.restaurant_outlined),
+                      _topMenu("커뮤니티", "assets/community_icon.png", Icons.chat_bubble_outline),
+                    ],
+                  ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 // 최근 본 숙소
-                const Text(
-                  "최근 본 숙소 >",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "최근 본 숙소",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("전체보기", style: TextStyle(color: Colors.blue)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, size: 12, color: Colors.blue),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _horizontalListView(
                   _recentStays,
                   _loadingRecentStays,
                   "최근 본 숙소가 없습니다.",
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 // 최근 본 맛집
-                const Text(
-                  "최근 본 맛집 >",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "최근 본 맛집",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("전체보기", style: TextStyle(color: Colors.blue)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, size: 12, color: Colors.blue),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _horizontalListViewRestaurant(
                   _recentRestaurants,
                   _loadingRecentRestaurants,
                   "최근 본 맛집이 없습니다.",
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 // 근처 숙소
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/near',
-                    arguments: ContentType.accommodation,
-                  ),
-                  child: const Text(
-                    "근처 숙소 >",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "근처 숙소",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        '/near',
+                        arguments: ContentType.accommodation,
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("전체보기", style: TextStyle(color: Colors.blue)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, size: 12, color: Colors.blue),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _horizontalListView(
                   _nearAccommodations,
                   _loadingAccommodations,
                   "주변 숙소가 없습니다.",
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
 
                 // 근처 맛집
-                GestureDetector(
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    '/near',
-                    arguments: ContentType.restaurant,
-                  ),
-                  child: const Text(
-                    "근처 맛집 >",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "근처 맛집",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        '/near',
+                        arguments: ContentType.restaurant,
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text("전체보기", style: TextStyle(color: Colors.blue)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_ios, size: 12, color: Colors.blue),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _horizontalListViewRestaurant(
                   _nearRestaurants,
                   _loadingRestaurants,
@@ -542,21 +678,25 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
       // 하단 네비게이션
       bottomNavigationBar: Container(
-        height: 70,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF0F0F0),
+        height: 75,
+        decoration: BoxDecoration(
+          color: Colors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 4),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _bottomItem(context, "홈", "assets/home_icon2.png"),
-            _bottomItem(context, "위시", "assets/wish_icon.png"),
-            _bottomItem(context, "주변", "assets/location_icon.png"),
-            _bottomItem(context, "메시지", "assets/message_icon.png"),
-            _bottomItem(context, "프로필", "assets/profile_icon.png"),
+            _bottomItem(context, "홈", "assets/home_icon2.png", Icons.home_outlined),
+            _bottomItem(context, "위시", "assets/wish_icon.png", Icons.favorite_border),
+            _bottomItem(context, "주변", "assets/location_icon.png", Icons.location_on_outlined),
+            _bottomItem(context, "메시지", "assets/message_icon.png", Icons.chat_bubble_outline),
+            _bottomItem(context, "프로필", "assets/profile_icon.png", Icons.person_outline),
           ],
         ),
       ),
@@ -568,31 +708,57 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // ==========================================================
   Widget _searchBar() {
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Image.asset("assets/menu_icon.png", width: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: "지역명을 입력하세요",
-                border: InputBorder.none,
-              ),
-              onSubmitted: (_) => _openSearchTypeSelector(),
-            ),
-          ),
-          GestureDetector(
-            onTap: _openSearchTypeSelector,
-            child: Image.asset("assets/search_icon.png", width: 20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _openSearchTypeSelector,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Icon(Icons.search, color: Colors.grey.shade600, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    enabled: false,
+                    style: const TextStyle(fontSize: 16),
+                    decoration: const InputDecoration(
+                      hintText: "어디로 여행가세요?",
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onSubmitted: (_) => _openSearchTypeSelector(),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.blue.shade400, Colors.purple.shade400],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.tune, color: Colors.white, size: 18),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -664,7 +830,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // ==========================================================
   // 상단 메뉴 버튼 (숙소 / 맛집 / 커뮤니티)
   // ==========================================================
-  Widget _topMenu(String label, String asset) {
+  Widget _topMenu(String label, String asset, IconData icon) {
     return InkWell(
       onTap: () {
         if (label == "숙소") {
@@ -683,12 +849,50 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
           Navigator.pushNamed(context, '/community');
         }
       },
-      child: Column(
-        children: [
-          Image.asset(asset, width: 40),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12)),
-        ],
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: label == "숙소"
+                      ? [Colors.blue.shade400, Colors.blue.shade600]
+                      : label == "맛집"
+                          ? [Colors.orange.shade400, Colors.orange.shade600]
+                          : [Colors.purple.shade400, Colors.purple.shade600],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -734,8 +938,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
               final fullData = doc.data() as Map<String, dynamic>;
 
-              saveRecentStay(fullData['contentid'].toString());
+              await saveRecentStay(fullData['contentid'].toString());
 
+              if (!context.mounted) return;
               Navigator.pushNamed(
                 context,
                 '/stayDetail',
@@ -805,8 +1010,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
               final fullData = doc.data() as Map<String, dynamic>;
 
-              saveRecentRestaurant(fullData['contentid'].toString());
+              await saveRecentRestaurant(fullData['contentid'].toString());
 
+              if (!context.mounted) return;
               Navigator.pushNamed(
                 context,
                 '/restaurantDetail',
@@ -836,7 +1042,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // ==========================================================
   // 하단 네비게이션 아이템
   // ==========================================================
-  Widget _bottomItem(BuildContext context, String label, String asset) {
+  Widget _bottomItem(BuildContext context, String label, String asset, IconData icon) {
+    final isCurrent = ModalRoute.of(context)?.settings.name == '/home' && label == "홈";
     return InkWell(
       onTap: () {
         if (label == "홈") {
@@ -858,9 +1065,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image.asset(asset, width: 28),
-          const SizedBox(height: 3),
-          Text(label, style: const TextStyle(fontSize: 12)),
+          Icon(
+            icon,
+            size: 26,
+            color: isCurrent ? Colors.blue.shade600 : Colors.grey.shade600,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+              color: isCurrent ? Colors.blue.shade600 : Colors.grey.shade600,
+            ),
+          ),
         ],
       ),
     );

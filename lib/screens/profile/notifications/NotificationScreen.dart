@@ -125,7 +125,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
+              final data = doc.data();
 
               final isRead = data["isRead"] ?? false;
               final type = data["type"] ?? "system";
@@ -173,7 +173,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black12.withOpacity(0.05),
+                          color: Colors.black12.withValues(alpha: 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),

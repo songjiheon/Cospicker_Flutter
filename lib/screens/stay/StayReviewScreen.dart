@@ -140,7 +140,7 @@ class _StayReviewScreenState extends State<StayReviewScreen> {
                         width: 90,
                         height: 90,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                           width: 90,
                           height: 90,
                           color: Colors.grey.shade300,
@@ -149,7 +149,7 @@ class _StayReviewScreenState extends State<StayReviewScreen> {
                       ),
                     );
                   },
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemCount: widget.reviewImages.length,
                 ),
               ),

@@ -254,6 +254,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   .update({
                 "blocked": FieldValue.arrayUnion([otherUid])
               });
+              if (!mounted) return;
               Navigator.pop(context);
             },
           ),
@@ -283,6 +284,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   .update({
                 "users": FieldValue.arrayRemove([currentUser?.uid ?? ""])
               });
+              if (!mounted) return;
               Navigator.pop(context);
             },
           ),
@@ -308,42 +310,69 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       backgroundColor: Colors.white,
 
       appBar: AppBar(
-        elevation: 1,
+        elevation: 0,
         backgroundColor: Colors.white,
-        leading: const BackButton(color: Colors.black),
-
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 16),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: profileImg.isNotEmpty
-                  ? NetworkImage(profileImg)
-                  : const AssetImage("assets/default_profile.png")
-              as ImageProvider,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.blue.shade200, width: 2),
+              ),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey.shade100,
+                backgroundImage: profileImg.isNotEmpty
+                    ? NetworkImage(profileImg)
+                    : const AssetImage("assets/default_profile.png") as ImageProvider,
+              ),
             ),
-            const SizedBox(width: 10),
-
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  otherName,
-                  style: const TextStyle(
-                      color: Colors.black,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    otherName,
+                    style: const TextStyle(
+                      color: Colors.black87,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16),
-                ),
-                Text(
-                  isTyping ? "입력 중..." : statusMsg,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                )
-              ],
+                      fontSize: 17,
+                    ),
+                  ),
+                  Text(
+                    isTyping ? "입력 중..." : statusMsg,
+                    style: TextStyle(
+                      color: isTyping ? Colors.blue.shade600 : Colors.grey.shade600,
+                      fontSize: 12,
+                    ),
+                  )
+                ],
+              ),
             )
           ],
         ),
-
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.more_vert, color: Colors.black87, size: 20),
+            ),
             onPressed: _openMenu,
           )
         ],
@@ -408,14 +437,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                 : CrossAxisAlignment.start,
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(10),
-                                margin:
-                                const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                margin: const EdgeInsets.symmetric(vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: isMe
-                                      ? Colors.blue.shade200
-                                      : Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(12),
+                                  gradient: isMe
+                                      ? LinearGradient(
+                                          colors: [Colors.blue.shade400, Colors.blue.shade600],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : null,
+                                  color: isMe ? null : Colors.grey.shade200,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(16),
+                                    topRight: const Radius.circular(16),
+                                    bottomLeft: Radius.circular(isMe ? 16 : 4),
+                                    bottomRight: Radius.circular(isMe ? 4 : 16),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isMe
+                                          ? Colors.blue.withValues(alpha: 0.2)
+                                          : Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
                                 child: Column(
                                   crossAxisAlignment:
@@ -424,7 +471,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     if (m["message"] != "")
                                       Text(
                                         m["message"],
-                                        style: const TextStyle(fontSize: 15),
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          color: isMe ? Colors.white : Colors.black87,
+                                        ),
                                       ),
 
                                     if (m["imageUrl"] != null &&
@@ -445,9 +495,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     const SizedBox(height: 4),
                                     Text(
                                       _formatTime(m["time"]),
-                                      style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.black54),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isMe
+                                            ? Colors.white.withValues(alpha: 0.8)
+                                            : Colors.grey.shade600,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -468,50 +521,86 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
           // ---------------- 입력창 ----------------
           Container(
-            padding: const EdgeInsets.all(10),
-            decoration: const BoxDecoration(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
-                BoxShadow(color: Colors.black12, blurRadius: 4),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, -2),
+                ),
               ],
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.photo, size: 28),
-                  onPressed: _pickImage,
-                ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.photo_camera_outlined, size: 24, color: Colors.grey.shade700),
+                      onPressed: _pickImage,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
 
-                // 메시지 입력 필드
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    onChanged: (v) => _updateTyping(v.isNotEmpty),
-                    decoration: InputDecoration(
-                      hintText: "메시지 입력...",
-                      filled: true,
-                      fillColor: Colors.grey.shade200,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
+                  // 메시지 입력 필드
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        onChanged: (v) => _updateTyping(v.isNotEmpty),
+                        decoration: InputDecoration(
+                          hintText: "메시지를 입력하세요...",
+                          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(width: 10),
+                  const SizedBox(width: 8),
 
-                // 전송 버튼
-                CircleAvatar(
-                  backgroundColor: Colors.black,
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: () => _sendMessage(),
+                  // 전송 버튼
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade400, Colors.blue.shade600],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
+                      onPressed: () => _sendMessage(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

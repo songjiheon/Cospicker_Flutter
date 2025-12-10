@@ -7,7 +7,7 @@ class SignupCompleteScreen extends StatefulWidget {
   const SignupCompleteScreen({super.key});
 
    @override
-  _SignupCompleteScreenState createState() => _SignupCompleteScreenState();
+  createState() => _SignupCompleteScreenState();
 }
 class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
 

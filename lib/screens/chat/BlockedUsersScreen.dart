@@ -47,6 +47,7 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
       blockedList.remove(targetUid);
     });
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("차단을 해제했습니다.")),
     );
@@ -70,8 +71,9 @@ class _BlockedUsersScreenState extends State<BlockedUsersScreen> {
           return FutureBuilder<Map<String, dynamic>>(
             future: _getUserInfo(blockedUid),
             builder: (context, snapshot) {
-              if (!snapshot.hasData)
+              if (!snapshot.hasData) {
                 return ListTile(title: Text("불러오는 중..."));
+              }
 
               final user = snapshot.data!;
               final img = user["profileImageUrl"] ?? "";

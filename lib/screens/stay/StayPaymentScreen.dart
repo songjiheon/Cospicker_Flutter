@@ -130,10 +130,8 @@ class _StayPaymentScreenState extends State<StayPaymentScreen> {
   Widget build(BuildContext context) {
     final data = widget.paymentData;
 
-    final roomName = data["roomName"];
     final price = data["price"];
     final date = data["date"];
-    final people = data["people"];
 
     // ==========================================
     // 🔥 날짜 파싱(오류 방지)
@@ -279,22 +277,20 @@ class _StayPaymentScreenState extends State<StayPaymentScreen> {
 
             try {
               await saveReservation();
-              if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PaymentLoadingScreen(
-                      paymentData: widget.paymentData,
-                    ),
+              if (!context.mounted) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PaymentLoadingScreen(
+                    paymentData: widget.paymentData,
                   ),
-                );
-              }
+                ),
+              );
             } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('예약 저장 실패: $e')),
-                );
-              }
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('예약 저장 실패: $e')),
+              );
             }
           }
               : null,

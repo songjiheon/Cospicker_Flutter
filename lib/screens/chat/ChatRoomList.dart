@@ -38,7 +38,8 @@ class ChatRoomListScreen extends StatelessWidget {
       body: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection("chatRooms")
-            .where("members", arrayContains: uid)
+            .where("users", arrayContains: uid)
+            .orderBy("lastTime", descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -55,7 +56,7 @@ class ChatRoomListScreen extends StatelessWidget {
               final room = rooms[index];
 
               return FutureBuilder<Map<String, dynamic>>(
-                future: getOtherUserInfo(room["members"]),
+                future: getOtherUserInfo(room["users"] ?? room["members"] ?? []),
                 builder: (context, userSnapshot) {
                   if (!userSnapshot.hasData) return const SizedBox();
 

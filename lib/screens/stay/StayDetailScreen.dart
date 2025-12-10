@@ -112,10 +112,10 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
         _popWithResult();
-        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -150,31 +150,70 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
   // ------------------------------- 하단 버튼 -------------------------------
   Widget _bottomButton() {
     return Container(
-      padding: EdgeInsets.all(16),
-      child: SizedBox(
-        height: 52,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF4A6DFF),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => StayRoomListScreen(
-                  stayData: widget.stayData,
-                  date: dateRange,
-                  people: people,
-                ),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade400, Colors.purple.shade400],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withValues(alpha: 0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
-            );
-          },
-          child: Text(
-            "모든 객실 보기",
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+            ],
+          ),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StayRoomListScreen(
+                    stayData: widget.stayData,
+                    date: dateRange,
+                    people: people,
+                  ),
+                ),
+              );
+            },
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.hotel, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  "모든 객실 보기",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -250,7 +289,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 6,
               offset: Offset(0, 3),
             ),
@@ -344,6 +383,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
                           onTap: () async {
                             await _saveStayGlobal(); // 전체 목록에 저장
                             await _saveStayToFolder(folderId); // 선택한 폴더에도 저장
+                            if (!context.mounted) return;
                             Navigator.pop(context);
                           },
                         );
@@ -592,7 +632,7 @@ class _StayDetailScreenState extends State<StayDetailScreen> {
 
 // ------------------- 리뷰 UI 박스 -------------------
 class _ReviewBox extends StatelessWidget {
-  const _ReviewBox({super.key});
+  const _ReviewBox();
 
   @override
   Widget build(BuildContext context) {

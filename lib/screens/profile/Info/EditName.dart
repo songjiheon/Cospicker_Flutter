@@ -46,8 +46,10 @@ class _EditNameScreenState extends State<EditNameScreen> {
           .update({'name': newName});
 
       // 저장 후 이전 화면으로 돌아가기
+      if (!mounted) return;
       Navigator.pop(context,newName);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('이름 변경 실패: $e')),
       );

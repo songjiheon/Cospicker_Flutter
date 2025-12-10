@@ -1,9 +1,8 @@
-import 'package:cospicker/screens/chat/ChatRoomList.dart';
+import 'screens/chat/ChatRoomListScreen.dart';
 import 'package:cospicker/screens/community/CommunityMainScreen.dart';
 import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cospicker/models/content_type.dart';   // ⭐ 공통 enum
 
 import 'screens/splash/SplashScreen.dart';
@@ -122,10 +121,7 @@ class MyApp extends StatelessWidget {
         },
 
         // Chat
-        '/chatRoomList': (context) {
-          final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
-          return ChatRoomListScreen(uid: uid);
-        },
+        '/chatRoomList': (context) => const ChatRoomListScreen(),
         '/chatRoom': (context) {
           final roomId = ModalRoute.of(context)!.settings.arguments as String;
           return ChatRoomScreen(roomId: roomId);

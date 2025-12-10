@@ -56,8 +56,10 @@ class _EditGenderScreenState extends State<EditGenderScreen> {
           .doc(uid)
           .update({'gender': _selectedGender});
 
+      if (!mounted) return;
       Navigator.pop(context,_selectedGender);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("저장 실패: $e")),
       );
@@ -95,40 +97,38 @@ class _EditGenderScreenState extends State<EditGenderScreen> {
             const SizedBox(height: 100),
 
             // 라디오 버튼
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 남성
-                Row(
-                  children: [
-                    Radio<String>(
-                      value: "남성",
-                      groupValue: _selectedGender,
-                      activeColor: Color(0xFF406EFF),
-                      onChanged: (value) {
-                        setState(() => _selectedGender = value);
-                      },
-                    ),
-                    const Text("남성", style: TextStyle(fontSize: 22)),
-                    const SizedBox(width: 30),
-                  ],
-                ),
+            RadioGroup<String>(
+              groupValue: _selectedGender,
+              onChanged: (value) {
+                setState(() => _selectedGender = value);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 남성
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: "남성",
+                        fillColor: WidgetStateProperty.all(Color(0xFF406EFF)),
+                      ),
+                      const Text("남성", style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: 30),
+                    ],
+                  ),
 
-                // 여성
-                Row(
-                  children: [
-                    Radio<String>(
-                      value: "여성",
-                      groupValue: _selectedGender,
-                      activeColor: Color(0xFF406EFF),
-                      onChanged: (value) {
-                        setState(() => _selectedGender = value);
-                      },
-                    ),
-                    const Text("여성", style: TextStyle(fontSize: 22)),
-                  ],
-                ),
-              ],
+                  // 여성
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: "여성",
+                        fillColor: WidgetStateProperty.all(Color(0xFF406EFF)),
+                      ),
+                      const Text("여성", style: TextStyle(fontSize: 22)),
+                    ],
+                  ),
+                ],
+              ),
             ),
 
             Spacer(),

@@ -103,6 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () async {
                           Navigator.pop(context);
                           await FirebaseAuth.instance.signOut();
+                          if (!context.mounted) return;
                           Navigator.pushNamedAndRemoveUntil(
                               context, '/login', (route) => false);
                         },
@@ -148,61 +149,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       //아래 바
       bottomNavigationBar: Container(
-        height: 70,
+        height: 75,
         decoration: BoxDecoration(
-          color: Color(0xFFF0F0F0),
+          color: Colors.white,
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 4),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _bottomItem(context,"홈", "assets/home_icon2.png"),
-            _bottomItem(context,"위시", "assets/wish_icon.png"),
-            _bottomItem(context,"주변", "assets/location_icon.png"),
-            _bottomItem(context,"메시지", "assets/message_icon.png"),
-            _bottomItem(context,"프로필", "assets/profile_icon.png"),
+            _bottomItem(context,"홈", "assets/home_icon2.png", Icons.home_outlined),
+            _bottomItem(context,"위시", "assets/wish_icon.png", Icons.favorite_border),
+            _bottomItem(context,"주변", "assets/location_icon.png", Icons.location_on_outlined),
+            _bottomItem(context,"메시지", "assets/message_icon.png", Icons.chat_bubble_outline),
+            _bottomItem(context,"프로필", "assets/profile_icon.png", Icons.person_outline),
           ],
         ),
       ),
 
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               //프로필 카드
               _profileCard(),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 24),
 
               // 상단 메뉴
               _quickMenuSection(),
 
-              const SizedBox(height: 25),
+              const SizedBox(height: 32),
 
-
-              const Text(
-                "예약 내역",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              // 예약 내역 섹션
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade400, Colors.purple.shade400],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    "예약 내역",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
               _menuTile("숙소",'/myInfo', Icons.hotel),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 32),
 
-
-              const Text(
-                "설정",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              // 설정 섹션
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade400, Colors.purple.shade400],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    "설정",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              _menuTile("공지사항",'/notice', Icons.notifications),
-              _menuTile("내 정보 관리",'/myInfo', Icons.settings),
-              _menuTile("로그아웃",'/myInfo', Icons.logout, color: Colors.red),
+              const SizedBox(height: 16),
+              _menuTile("공지사항",'/notice', Icons.notifications_outlined),
+              const SizedBox(height: 12),
+              _menuTile("내 정보 관리",'/myInfo', Icons.settings_outlined),
+              const SizedBox(height: 12),
+              _menuTile("로그아웃",'/myInfo', Icons.logout, color: Colors.red.shade600),
             ],
           ),
         ),
@@ -213,40 +261,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _profileCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade400, Colors.purple.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Row(
         children: [
           // 프로필 이미지
-           CircleAvatar(
-            radius: 33,
-             backgroundColor: Colors.transparent,
-          backgroundImage: profileImageUrl.isNotEmpty ?
-          NetworkImage(profileImageUrl)        // Firestore URL
-             :  AssetImage("assets/profile_icon.png") as ImageProvider,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.white,
+              backgroundImage: profileImageUrl.isNotEmpty
+                  ? NetworkImage(profileImageUrl)
+                  : AssetImage("assets/profile_icon.png") as ImageProvider,
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
 
           // 이름/이메일
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                userName,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                userEmail,
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.email_outlined, size: 16, color: Colors.white.withValues(alpha: 0.9)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        userEmail,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.pushNamed(context, '/myInfo'),
+            icon: const Icon(Icons.edit_outlined, color: Colors.white),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+            ),
           ),
         ],
       ),
@@ -257,77 +350,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
   //상단 메뉴
   Widget _quickMenuSection() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _quickMenu("최근 본 상품", Icons.visibility),
-          _quickMenu("내 글", Icons.article,route: '/myPost'),
-          _quickMenu("댓글", Icons.comment, route: '/myComment'),
-          _quickMenu("알림", Icons.notifications),
+          _quickMenu("최근 본 상품", Icons.visibility_outlined, Colors.orange),
+          _quickMenu("내 글", Icons.article_outlined, Colors.blue, route: '/myPost'),
+          _quickMenu("댓글", Icons.comment_outlined, Colors.green, route: '/myComment'),
+          _quickMenu("알림", Icons.notifications_outlined, Colors.purple),
         ],
       ),
     );
   }
 
-  // quit 메뉴
-  Widget _quickMenu(String text, IconData icon,{String? route}) {
+  // quick 메뉴
+  Widget _quickMenu(String text, IconData icon, Color color, {String? route}) {
     return InkWell(
-        onTap: () {
-          if (route != null) Navigator.pushNamed(context, route);
-          },
-    child:  Column(
-      children: [
-        CircleAvatar(
-          radius: 26,
-          backgroundColor: Colors.blue.shade50,
-          child: Icon(icon, color: Colors.blue, size: 24),
+      onTap: () {
+        if (route != null) Navigator.pushNamed(context, route);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(height: 6),
-        Text(text, style: const TextStyle(fontSize: 12)),
-      ],
-     ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   //  리스트 메뉴 아이템
   Widget _menuTile(String title,String route, IconData icon, {Color color = Colors.black}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 0),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 6),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 16, color: color),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if(title=="로그아웃"){
+              _showLogoutDialog();
+            } else if(route.isNotEmpty) {
+              Navigator.pushNamed(context, route);
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: color,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey.shade400,
+                  size: 24,
+                ),
+              ],
+            ),
+          ),
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          if(title=="로그아웃"){
-            _showLogoutDialog();
-          }else if(route.isNotEmpty)
-          Navigator.pushNamed(context, route);
-        },
       ),
     );
   }
 }
 
 // 하단 네비게이션
-Widget _bottomItem(BuildContext context, String label, String asset) {
+Widget _bottomItem(BuildContext context, String label, String asset, IconData icon) {
+  final isCurrent = ModalRoute.of(context)?.settings.name == '/profile' && label == "프로필";
   return InkWell(
     onTap: () {
       switch (label) {
@@ -336,7 +487,7 @@ Widget _bottomItem(BuildContext context, String label, String asset) {
           break;
 
         case "위시":
-          Navigator.pushNamed(context, '/wishList');   // 🔥 수정됨
+          Navigator.pushNamed(context, '/wishList');
           break;
 
         case "주변":
@@ -355,9 +506,20 @@ Widget _bottomItem(BuildContext context, String label, String asset) {
     child: Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Image.asset(asset, width: 28),
-        const SizedBox(height: 3),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Icon(
+          icon,
+          size: 26,
+          color: isCurrent ? Colors.blue.shade600 : Colors.grey.shade600,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+            color: isCurrent ? Colors.blue.shade600 : Colors.grey.shade600,
+          ),
+        ),
       ],
     ),
   );

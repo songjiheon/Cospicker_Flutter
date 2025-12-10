@@ -247,13 +247,19 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                 const Text("가격대",
                     style:
                     TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Column(
-                  children: [
-                    _priceOption(setModal, "1만원 이하"),
-                    _priceOption(setModal, "1–2만원"),
-                    _priceOption(setModal, "2–3만원"),
-                    _priceOption(setModal, "3만원 이상"),
-                  ],
+                RadioGroup<String?>(
+                  groupValue: selectedPriceRange,
+                  onChanged: (v) {
+                    setModal(() => selectedPriceRange = v);
+                  },
+                  child: Column(
+                    children: [
+                      _priceOption("1만원 이하"),
+                      _priceOption("1–2만원"),
+                      _priceOption("2–3만원"),
+                      _priceOption("3만원 이상"),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 25),
@@ -310,15 +316,11 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
     );
   }
 
-  Widget _priceOption(Function setModal, String value) {
+  Widget _priceOption(String value) {
     return RadioListTile(
       dense: true,
       title: Text(value),
       value: value,
-      groupValue: selectedPriceRange,
-      onChanged: (v) {
-        setModal(() => selectedPriceRange = v as String?);
-      },
     );
   }
 
@@ -352,14 +354,20 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
           final price = data["avgPrice"] ?? 0;
 
           if (selectedPriceRange != null) {
-            if (selectedPriceRange == "1만원 이하" && price > 10000)
+            if (selectedPriceRange == "1만원 이하" && price > 10000) {
               return false;
+            }
             if (selectedPriceRange == "1–2만원" &&
-                !(price >= 10000 && price <= 20000)) return false;
-            if (selectedPriceRange == "2–3만원" &&
-                !(price >= 20000 && price <= 30000)) return false;
-            if (selectedPriceRange == "3만원 이상" && price < 30000)
+                !(price >= 10000 && price <= 20000)) {
               return false;
+            }
+            if (selectedPriceRange == "2–3만원" &&
+                !(price >= 20000 && price <= 30000)) {
+              return false;
+            }
+            if (selectedPriceRange == "3만원 이상" && price < 30000) {
+              return false;
+            }
           }
 
           return true;
@@ -422,7 +430,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.85),
+                              color: Colors.white.withValues(alpha: 0.85),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
@@ -477,7 +485,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
               width: 120,
               height: 120,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) =>
+              errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) =>
                   Container(width: 120, height: 120, color: Colors.grey.shade300),
             ),
           ),
@@ -568,7 +576,9 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                               restaurantId: id,
                               restaurantData: data,
                             );
+                            if (!context.mounted) return;
                             Navigator.pop(context);
+                            if (!mounted) return;
                             setState(() {});
                           },
                         );

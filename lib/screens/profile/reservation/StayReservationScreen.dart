@@ -303,6 +303,7 @@ class _StayReservationScreenState extends State<StayReservationScreen>
                   .doc(reservationId)
                   .update({"status": "canceled"});
 
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("예약이 취소되었습니다.")),
               );

@@ -44,6 +44,7 @@ class _EditBirthScreenState extends State<EditBirthScreen> {
         'birthdate': Timestamp.fromDate(birthDate),
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('생년월일 저장 완료')),
       );
@@ -53,6 +54,7 @@ class _EditBirthScreenState extends State<EditBirthScreen> {
 
       Navigator.pop(context, birthStr);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('저장 실패: $e')),
       );
@@ -188,7 +190,7 @@ class _EditBirthScreenState extends State<EditBirthScreen> {
       ValueChanged<int> onSelected) {
     showModalBottomSheet(
       context: context,
-      builder: (_) => Container(
+      builder: (_) => SizedBox(
         height: 250,
         child: Column(
           children: [

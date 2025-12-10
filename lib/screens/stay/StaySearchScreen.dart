@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math';
@@ -83,19 +82,6 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
   ) async {
     final batch = FirebaseFirestore.instance.batch();
     final random = Random();
-
-    final descriptions = [
-      "신선한 재료와 정성 가득한 조리로 많은 이들이 찾는 인기 맛집입니다.",
-      "현지인들에게 사랑받는 곳으로, 깊은 풍미와 정직한 맛이 특징입니다.",
-      "깔끔한 맛과 푸짐한 양으로 누구나 만족할 만한 식사를 제공합니다.",
-      "편안한 분위기에서 다양한 메뉴를 즐길 수 있는 곳입니다.",
-      "특별한 조리법으로 재료 본연의 풍미를 살린 요리를 선보입니다.",
-      "가성비 좋고 맛있는 음식으로 꾸준히 호평받고 있는 식당입니다.",
-      "담백하고 자극적이지 않은 맛으로 남녀노소 모두에게 추천합니다.",
-      "트렌디한 감성과 맛을 함께 느낄 수 있는 인기 있는 음식점입니다.",
-      "정갈한 음식과 친절한 서비스로 재방문율이 높은 맛집입니다.",
-      "풍부한 향과 깔끔한 뒷맛을 자랑하며 많은 여행객들이 찾는 명소입니다.",
-    ];
 
     for (var item in items) {
       final docRef = FirebaseFirestore.instance
@@ -195,9 +181,6 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         if (roomType == "디럭스 룸") roomPrice = (price * 1.5).round();
         if (roomType == "스위트 룸") roomPrice = (price * 2).round();
 
-        String roomImage = roomType == "스탠다드 룸"
-            ? mainRoomImage
-            : roomImages[random.nextInt(roomImages.length)];
         int max = 2 + random.nextInt(3);
 
         batch.set(roomRef, {
@@ -306,7 +289,6 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
     final result = await getLatLngByGoogle(text);
     debugPrint("위치 결과: $result");
-    ;
     // 최근 검색 저장
     if (!recentList.contains(text)) {
       setState(() {
@@ -339,6 +321,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       await saveRestaurantItemsToFirestore(tourItems, text); // 맛집
     }
 
+    if (!mounted) return;
     if (currentType == ContentType.accommodation) {
       Navigator.pushNamed(
         context,

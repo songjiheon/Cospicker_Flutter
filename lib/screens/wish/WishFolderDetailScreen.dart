@@ -139,7 +139,7 @@ class _WishFolderDetailScreenState extends State<WishFolderDetailScreen> {
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                     width: 90,
                     height: 90,
                     color: Colors.grey.shade300,
@@ -202,6 +202,7 @@ class _WishFolderDetailScreenState extends State<WishFolderDetailScreen> {
 
       if (!doc.exists) return;
 
+      if (!mounted) return;
       Navigator.pushNamed(
         context,
         "/stayDetail",
@@ -219,6 +220,7 @@ class _WishFolderDetailScreenState extends State<WishFolderDetailScreen> {
 
       if (!doc.exists) return;
 
+      if (!mounted) return;
       Navigator.pushNamed(
         context,
         "/restaurantDetail",
@@ -282,6 +284,7 @@ class _WishFolderDetailScreenState extends State<WishFolderDetailScreen> {
 
                 setState(() => folderName = newName);
 
+                if (!mounted) return;
                 Navigator.pop(context);
               },
               child: const Text("변경"),

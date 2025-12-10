@@ -56,7 +56,7 @@ class StayRoomDetailScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 260,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (BuildContext context, Object error, StackTrace? stackTrace) => Container(
                         height: 260,
                         color: Colors.grey.shade300,
                         child: const Icon(Icons.broken_image, size: 60),
@@ -191,7 +191,7 @@ class StayRoomDetailScreen extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +11,7 @@ class MyinfoScreen extends StatefulWidget {
   const MyinfoScreen({super.key});
 
   @override
-  _MyinfoScreenState createState() => _MyinfoScreenState();
+  createState() => _MyinfoScreenState();
 }
 
 class _MyinfoScreenState extends State<MyinfoScreen> {

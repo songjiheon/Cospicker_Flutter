@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CommunityMainScreen.dart'; // Post 모델 import
 import 'package:firebase_auth/firebase_auth.dart';
 
 
@@ -56,10 +55,10 @@ class Post {
 class CommunityPostScreen extends StatefulWidget {
   final String postId; // postId만 전달
 
-  const CommunityPostScreen({Key? key, required this.postId}) : super(key: key);
+  const CommunityPostScreen({super.key, required this.postId});
 
   @override
-  _CommunityPostState createState() => _CommunityPostState();
+  createState() => _CommunityPostState();
 }
 
 class _CommunityPostState extends State<CommunityPostScreen> {
@@ -221,6 +220,7 @@ class _CommunityPostState extends State<CommunityPostScreen> {
                   'content': newContent,
                 });
 
+                if (!mounted) return;
                 setState(() {
                   post = Post(
                     uid: post!.uid,
@@ -237,6 +237,7 @@ class _CommunityPostState extends State<CommunityPostScreen> {
                   );
                 });
 
+                if (!context.mounted) return;
                 Navigator.pop(context);
               },
               child: Text("저장"),
@@ -401,7 +402,7 @@ class _CommunityPostState extends State<CommunityPostScreen> {
                           final commentUid = data['uid'] ?? '';
                           final commentTime =
                           (data['createdAt'] as Timestamp).toDate();
-                          void _showEditCommentDialog() {
+                          void showEditCommentDialog() {
                             final commentController =
                             TextEditingController(text: data['content']);
                             showDialog(
@@ -428,6 +429,7 @@ class _CommunityPostState extends State<CommunityPostScreen> {
                                           .collection('Comments')
                                           .doc(commentId)
                                           .update({'content': newContent});
+                                      if (!context.mounted) return;
                                       Navigator.pop(context);
                                     },
                                     child: Text("저장"),
@@ -472,7 +474,7 @@ class _CommunityPostState extends State<CommunityPostScreen> {
                                 if(FirebaseAuth.instance.currentUser?.uid == commentUid)
                                   IconButton(
                                     icon: Icon(Icons.edit, size: 18),
-                                    onPressed: _showEditCommentDialog,
+                                    onPressed: showEditCommentDialog,
                                   ),
                               ],
                             ),

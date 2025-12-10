@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class EditPasswordScreen extends StatefulWidget {
+  const EditPasswordScreen({super.key});
+
   @override
   State<EditPasswordScreen> createState() => _EditPasswordScreenState();
 }
