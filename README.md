@@ -69,93 +69,16 @@ lib/
 │   │   └── SignupComplete.dart
 │   │
 │   ├── chat/
-│   │   ├── BlockedUsersScreen.dart
-│   │   ├── ChatRoomListScreen.dart
-│   │   ├── ChatRoomScreen.dart
-│   │   ├── ChatRoom.dart
-│   │   └── CreateChatRoom.dart
-│   │
-│   ├── community/
-│   │   ├── CommunityMainScreen.dart
-│   │   ├── CommunityPostScreen.dart
-│   │   ├── CommunitySearchScreen.dart
-│   │   ├── CommunitySearchDetailScreen.dart
-│   │   └── CommunityWriting.dart
-│   │
-│   ├── home/
-│   │   └── HomeScreen.dart
-│   │
-│   ├── near/
-│   │   └── NearMapScreen.dart
-│   │
-│   ├── payment/
-│   │   ├── PaymentLoadingScreen.dart
-│   │   └── PaymentCompleteScreen.dart
-│   │
-│   ├── profile/
-│   │   ├── comment/
-│   │   │   └── MyComment.dart
-│   │   │
-│   │   ├── Info/
-│   │   │   ├── EditBirth.dart
-│   │   │   ├── EditGender.dart
-│   │   │   ├── EditName.dart
-│   │   │   ├── EditNickname.dart
-│   │   │   ├── EditPassword.dart
-│   │   │   └── EditPhoneNumber.dart
-│   │   │
-│   │   ├── notice/
-│   │   │   ├── Notice.dart
-│   │   │   └── NoticeDetail.dart
-│   │   │
-│   │   ├── notifications/
-│   │   │   └── NotificationScreen.dart
-│   │   │
-│   │   ├── post/
-│   │   │   └── MyPost.dart
-│   │   │
-│   │   ├── recent/
-│   │   │   └── RecentViewScreen.dart
-│   │   │
-│   │   └── reservation/
-│   │       ├── MyinfoScreen.dart
-│   │       └── ProfileScreen.dart
-│   │
-│   ├── restaurant/     
-│   │   ├── RestaurantDetailScreen.dart
-│   │   ├── RestaurantListScreen.dart
-│   │   ├── RestaurantMapScreen.dart
-│   │   ├── RestaurantReviewScreen.dart
-│   │   └── RestaurantSearchScreen.dart
-│   │
-│   ├── splash/
-│   │   └── SplashScreen.dart
-│   │
-│   ├── stay/
-│   │   ├── StayDatePeopleScreen.dart
-│   │   ├── StayDetailScreen.dart
-│   │   ├── StayListScreen.dart
-│   │   ├── StayPaymentScreen.dart
-│   │   ├── StayReviewPolicyScreen.dart
-│   │   ├── StayReviewScreen.dart
-│   │   ├── StayRoomDetailScreen.dart
-│   │   ├── StayRoomListScreen.dart
-│   │   └── StaySearchScreen.dart
-│   │
-│   ├── Widget/
-│   │   └── BottomNavItem.dart
-│   │
-│   └── wish/
-│       ├── WishListScreen.dart
-│       └── WishFolderDetailScreen.dart
-│
-└── tools/
-    └── firebase_options.dart
+│ 성
+# Tour API 서비스 키 (필수)
+# 한국관광공사 Tour API에서 발급받은 서비스 키를 입력하세요
+SERVICE_KEY=c1ba3895a88789bffa372adbfd93402f24d87f2806bd7381438667920a297936
 
+# 모바일 OS (선택사항, 기본값: ETC)
+MOBILE_OS=ETC
 
-
-```
------------------------
+# 모바일 앱 이름 (선택사항, 기본값: Cospicker)
+MOBILE_APP=Cospicker
 
 🚀 실행 방법
 -------------
