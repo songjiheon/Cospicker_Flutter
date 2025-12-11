@@ -1,5 +1,5 @@
 import 'package:cospicker/screens/chat/ChatRoomListScreen.dart';
-import 'package:cospicker/screens/community/CommunityMainScreen.dart';
+import 'package:cospicker/screens/community/community_main_screen.dart';
 import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,15 +9,15 @@ import 'screens/splash/SplashScreen.dart';
 import 'firebase_options.dart';
 
 // Auth
-import 'screens/auth/LoginScreen.dart';
-import 'screens/auth/SignupScreen.dart';
-import 'screens/auth/SignupComplete.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/signup_screen.dart';
+import 'screens/auth/signup_complete.dart';
 
 // Home
 import 'screens/home/HomeScreen.dart';
 
 // near
-import 'screens/near/NearMapScreen.dart';   // ✔ enum 정의 제거했으면 이 import는 정상
+import 'screens/near/near_map_screen.dart';
 
 // Profile
 import 'screens/profile/ProfileScreen.dart';
@@ -35,7 +35,7 @@ import 'screens/profile/post/MyPost.dart';
 import 'screens/profile/comment/MyComment.dart';
 
 // Chat
-import 'screens/chat/ChatRoomScreen.dart';
+import 'screens/chat/chat_room_screen.dart';
 
 // WishList
 import 'screens/wish/WishListScreen.dart';
@@ -57,23 +57,11 @@ import 'screens/restaurant/RestaurantReviewScreen.dart';
 import 'screens/restaurant/RestaurantSearchScreen.dart';
 import 'screens/restaurant/RestaurantMapScreen.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Load environment variables (optional - if .env file doesn't exist, continue)
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    // .env 파일이 없어도 앱은 계속 실행
-    // 환경 변수는 기본값을 사용하거나 런타임에 설정할 수 있음
-    debugPrint('Warning: .env file not found. Using default values.');
-  }
-  
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }

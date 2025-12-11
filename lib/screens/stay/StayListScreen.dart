@@ -83,7 +83,7 @@ class _StayListScreenState extends State<StayListScreen> {
       await docRef.update({"contentIds": currentList}); // 기존 문서 있으면 update
     } else {
       await docRef.set({"contentIds": currentList}); // 없으면 새로 생성
-    }
+    }    print("최근 본 숙소 저장: $contentId");
   }
 
   // ============================

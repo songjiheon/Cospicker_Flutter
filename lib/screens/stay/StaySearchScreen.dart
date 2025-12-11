@@ -5,10 +5,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cospicker/models/content_type.dart';
-import 'package:cospicker/core/constants/app_constants.dart';
-import 'package:cospicker/core/utils/logger_util.dart';
-import 'package:cospicker/core/utils/error_handler.dart';
-import 'package:cospicker/core/utils/env_util.dart';
 
 class StaySearchScreen extends StatefulWidget {
   final ContentType type;
@@ -184,16 +180,15 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         if (roomType == "디럭스 룸") roomPrice = (price * 1.5).round();
         if (roomType == "스위트 룸") roomPrice = (price * 2).round();
 
-        final roomImage = roomType == "스탠다드 룸"
-            ? mainRoomImage
-            : roomImages[random.nextInt(roomImages.length)];
-        final max = 2 + random.nextInt(3);
+        int max = 2 + random.nextInt(3);
 
         batch.set(roomRef, {
           "roomName": roomType,
           "price": roomPrice,
           "salePrice": (roomPrice * 0.8 / 1000).round() * 1000,
-          "roomImage": roomImage,
+          "roomImage": roomType == "스탠다드 룸"
+              ? mainRoomImage
+              : roomImages[random.nextInt(roomImages.length)],
           "standard": 2,
           "max": max,
         });
@@ -201,7 +196,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     }
 
     await batch.commit();
-    AppLogger.i("🔥 Firestore 저장 완료 (${items.length}개)");
+    print("🔥 Firestore 저장 완료 (${items.length}개)");
   }
 
   Future<List<dynamic>> fetchTourApiLocationBased({
@@ -213,9 +208,10 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     int minItems = 3, //  최소 개수 설정
     int numOfRows = 10, // 한 페이지 최대 개수
   }) async {
-    final serviceKey = EnvUtil.getServiceKey();
-    final mobileOS = EnvUtil.getMobileOS();
-    final mobileApp = EnvUtil.getMobileApp();
+    const String serviceKey =
+        "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
+    const String mobileOS = "ETC";
+    const String mobileApp = "Cospicker";
 
     int pageNo = 1;
     List<dynamic> accumulated = [];
@@ -228,7 +224,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
 
     while (accumulated.length < minItems) {
       final url = Uri.parse(
-        "${AppConstants.tourApiBaseUrl}${AppConstants.tourApiEndpoint}"
+        "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
         "?serviceKey=$serviceKey"
         "&mapX=$lng"
         "&mapY=$lat"
@@ -242,7 +238,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         "&_type=json",
       );
 
-      AppLogger.d("📡 TourAPI 요청 (Page $pageNo, ContentType: $contentTypeId): $url");
+      print("📡 TourAPI 요청 (Page $pageNo, ContentType: $contentTypeId): $url");
 
       try {
         final response = await http.get(
@@ -250,7 +246,7 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
           headers: {'Accept': 'application/json'},
         );
         if (response.statusCode != 200) {
-          AppLogger.w(
+          print(
             "Error: HTTP Status ${response.statusCode}, Body: ${response.body}",
           );
           break;
@@ -274,12 +270,12 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
         accumulated.addAll(filtered);
         pageNo++; // 다음 페이지
       } catch (e) {
-        ErrorHandler.logError(e, context: 'Tour API 호출');
+        print("네트워크/파싱 오류 발생: $e");
         break;
       }
     }
 
-    AppLogger.d("✅ 최종 누적 항목 수: ${accumulated.length}");
+    print("✅ 최종 누적 항목 수: ${accumulated.length}");
     return accumulated.take(minItems).toList(); // 최소 개수 보장
   }
 
@@ -293,8 +289,8 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
     if (text.isEmpty) return;
 
     final result = await getLatLngByGoogle(text);
-    AppLogger.d("위치 결과: $result");
-    
+    print("위치 결과: $result");
+    ;
     // 최근 검색 저장
     if (!recentList.contains(text)) {
       setState(() {
@@ -303,25 +299,17 @@ class _StaySearchScreenState extends State<StaySearchScreen> {
       _saveRecentSearch(); // Firestore 저장
     }
     if (result == null) {
-      AppLogger.w("❌ 주소 → 좌표 변환 실패");
-      if (mounted) {
-        ErrorHandler.handleError(
-          context,
-          Exception('주소를 좌표로 변환할 수 없습니다.'),
-          customMessage: '주소를 찾을 수 없습니다. 다른 주소를 입력해주세요.',
-        );
-      }
+      print("❌ 주소 → 좌표 변환 실패");
       return;
     }
 
     double lat = result["lat"]!;
     double lng = result["lng"]!;
 
-    AppLogger.d("LAT = $lat, LNG = $lng");
+    print("LAT = $lat");
+    print("LNG = $lng");
 
-    int contentTypeId = currentType == ContentType.accommodation 
-        ? AppConstants.contentTypeAccommodation 
-        : AppConstants.contentTypeRestaurant;
+    int contentTypeId = currentType == ContentType.accommodation ? 32 : 39;
 
     final tourItems = await fetchTourApiLocationBased(
       lat: lat,

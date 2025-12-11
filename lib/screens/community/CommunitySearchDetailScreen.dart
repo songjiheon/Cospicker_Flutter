@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CommunityPostScreen.dart';
+import 'community_post_screen.dart';
 
 class CommunitySearchDetailScreen extends StatefulWidget {
   final String keyword;
   final String? type; // 자유 / 질문 / 정보 / 전체
+  final bool isTagSearch; // 태그 검색 여부
 
   const CommunitySearchDetailScreen({
     super.key,
     required this.keyword,
     this.type,
+    this.isTagSearch = false,
   });
 
   @override
@@ -20,7 +22,7 @@ class CommunitySearchDetailScreen extends StatefulWidget {
 class _CommunitySearchDetailScreenState
     extends State<CommunitySearchDetailScreen> {
   // 검색 방식: 일반글 / 태그
-  String filterType = "일반글";
+  late String filterType;
 
   // 글유형 선택
   String selectedPostType = "전체";
@@ -31,6 +33,8 @@ class _CommunitySearchDetailScreenState
 
     // 초기값 적용
     selectedPostType = widget.type ?? "전체";
+    // 태그 검색이면 초기 필터 타입을 "태그"로 설정
+    filterType = widget.isTagSearch ? "태그" : "일반글";
   }
 
   @override
@@ -170,6 +174,11 @@ class _CommunitySearchDetailScreenState
   Widget _postList() {
     final keyword = widget.keyword.trim();
 
+    if (keyword.isEmpty) {
+      return const Center(
+          child: Text("검색어를 입력해주세요.", style: TextStyle(color: Colors.grey)));
+    }
+
     Query query = FirebaseFirestore.instance.collection("Posts");
 
     // 🔥 글유형 필터 적용
@@ -178,20 +187,61 @@ class _CommunitySearchDetailScreenState
     }
 
     // 🔥 검색 방식 적용
+    // arrayContains와 orderBy를 함께 사용하면 composite index 필요
+    // 모든 검색에서 클라이언트 사이드 정렬 사용
     if (filterType == "일반글") {
       query = query.where("keywords", arrayContains: keyword);
     } else {
       query = query.where("tags", arrayContains: keyword);
     }
 
+    // orderBy를 사용하지 않고 클라이언트 사이드에서 정렬
     return StreamBuilder<QuerySnapshot>(
-      stream: query.orderBy("createdAt", descending: true).snapshots(),
+      stream: query.snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final docs = snapshot.data!.docs;
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  "오류가 발생했습니다: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  "Firestore 인덱스가 필요할 수 있습니다.",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return const Center(
+              child: Text("검색 결과가 없습니다.", style: TextStyle(color: Colors.grey)));
+        }
+
+        var docs = snapshot.data!.docs.toList();
+
+        // 클라이언트 사이드에서 createdAt 기준 내림차순 정렬
+        docs.sort((a, b) {
+          final aTime = (a.data() as Map<String, dynamic>)["createdAt"] as Timestamp?;
+          final bTime = (b.data() as Map<String, dynamic>)["createdAt"] as Timestamp?;
+          if (aTime == null && bTime == null) return 0;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime); // 내림차순
+        });
 
         if (docs.isEmpty) {
           return const Center(

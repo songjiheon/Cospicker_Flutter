@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
@@ -6,12 +7,6 @@ import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'package:geocoding/geocoding.dart';
 import 'package:cospicker/models/content_type.dart';
-import 'package:cospicker/core/constants/app_constants.dart';
-import 'package:cospicker/core/utils/logger_util.dart';
-import 'package:cospicker/core/utils/error_handler.dart';
-import 'package:cospicker/core/utils/env_util.dart';
-import 'package:cospicker/core/services/firebase_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -94,22 +89,58 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // 최근 본 숙소 저장
   // ========================================
   Future<void> saveRecentStay(String contentId) async {
-    await FirebaseService.saveRecentItem(
-      collection: AppConstants.collectionRecentStays,
-      contentId: contentId,
-      maxItems: AppConstants.maxRecentItems,
-    );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final docRef =
+    FirebaseFirestore.instance.collection("recentStays").doc(user.uid);
+
+    final docSnap = await docRef.get();
+
+    List<String> list = [];
+    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
+      list = List<String>.from(docSnap["contentIds"]);
+    }
+
+    list.remove(contentId);
+    list.insert(0, contentId);
+
+    if (list.length > 10) list = list.sublist(0, 10);
+
+    if (docSnap.exists) {
+      await docRef.update({"contentIds": list});
+    } else {
+      await docRef.set({"contentIds": list});
+    }
   }
 
   // ========================================
   // 최근 본 맛집 저장
   // ========================================
   Future<void> saveRecentRestaurant(String contentId) async {
-    await FirebaseService.saveRecentItem(
-      collection: AppConstants.collectionRecentRestaurants,
-      contentId: contentId,
-      maxItems: AppConstants.maxRecentItems,
-    );
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final docRef =
+    FirebaseFirestore.instance.collection("recentRestaurants").doc(user.uid);
+
+    final docSnap = await docRef.get();
+
+    List<String> list = [];
+    if (docSnap.exists && docSnap.data()!.containsKey("contentIds")) {
+      list = List<String>.from(docSnap["contentIds"]);
+    }
+
+    list.remove(contentId);
+    list.insert(0, contentId);
+
+    if (list.length > 10) list = list.sublist(0, 10);
+
+    if (docSnap.exists) {
+      await docRef.update({"contentIds": list});
+    } else {
+      await docRef.set({"contentIds": list});
+    }
   }
 
   // ========================================
@@ -147,7 +178,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       final place = placemarks.first;
       return place.administrativeArea ?? "Unknown";
     } catch (e) {
-      ErrorHandler.logError(e, context: '도시 변환');
+      print("도시 변환 실패: $e");
       return "Unknown";
     }
   }
@@ -156,15 +187,37 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // 최근 본 숙소 불러오기
   // ========================================
   Future<void> _loadRecentStays() async {
-    setState(() => _loadingRecentStays = true);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    final items = await FirebaseService.getRecentItems(
-      recentCollection: AppConstants.collectionRecentStays,
-      itemCollection: AppConstants.collectionTourItems,
-    );
+    final doc = await FirebaseFirestore.instance
+        .collection("recentStays")
+        .doc(user.uid)
+        .get();
 
+    if (!doc.exists || !doc.data()!.containsKey("contentIds")) {
+      setState(() {
+        _recentStays = [];
+        _loadingRecentStays = false;
+      });
+      return;
+    }
+
+    final List<dynamic> contentIds = doc["contentIds"];
+
+    final futures = contentIds.map((id) async {
+      final stayDoc =
+      await FirebaseFirestore.instance.collection("tourItems").doc(id).get();
+
+      if (stayDoc.exists && stayDoc.data() != null) {
+        return stayDoc.data() as Map<String, dynamic>;
+      }
+      return null;
+    });
+
+    final results = await Future.wait(futures);
     setState(() {
-      _recentStays = items;
+      _recentStays = results.whereType<Map<String, dynamic>>().toList();
       _loadingRecentStays = false;
     });
   }
@@ -173,15 +226,39 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   // 최근 본 맛집 불러오기
   // ========================================
   Future<void> _loadRecentRestaurants() async {
-    setState(() => _loadingRecentRestaurants = true);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-    final items = await FirebaseService.getRecentItems(
-      recentCollection: AppConstants.collectionRecentRestaurants,
-      itemCollection: AppConstants.collectionRestaurantItems,
-    );
+    final doc = await FirebaseFirestore.instance
+        .collection("recentRestaurants")
+        .doc(user.uid)
+        .get();
 
+    if (!doc.exists || !doc.data()!.containsKey("contentIds")) {
+      setState(() {
+        _recentRestaurants = [];
+        _loadingRecentRestaurants = false;
+      });
+      return;
+    }
+
+    final List<dynamic> contentIds = doc["contentIds"];
+
+    final futures = contentIds.map((id) async {
+      final rDoc = await FirebaseFirestore.instance
+          .collection("restaurantItems")
+          .doc(id)
+          .get();
+
+      if (rDoc.exists && rDoc.data() != null) {
+        return rDoc.data() as Map<String, dynamic>;
+      }
+      return null;
+    });
+
+    final results = await Future.wait(futures);
     setState(() {
-      _recentRestaurants = items;
+      _recentRestaurants = results.whereType<Map<String, dynamic>>().toList();
       _loadingRecentRestaurants = false;
     });
   }
@@ -197,15 +274,17 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        AppLogger.w("위치 권한 없음");
+        // 위치 권한 없음
         return null;
       }
 
       return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
     } catch (e) {
-      ErrorHandler.logError(e, context: '위치 가져오기');
+      // 위치 가져오기 실패: $e
       return null;
     }
   }
@@ -218,31 +297,27 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       double lng,
       int contentTypeId, // 32 = 숙소, 39 = 맛집
       ) async {
-    final serviceKey = EnvUtil.getServiceKey();
-    final mobileOS = EnvUtil.getMobileOS();
-    final mobileApp = EnvUtil.getMobileApp();
+    const serviceKey =
+        "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
 
     final url = Uri.parse(
-      "${AppConstants.tourApiBaseUrl}${AppConstants.tourApiEndpoint}"
+      "https://apis.data.go.kr/B551011/KorService2/locationBasedList2"
           "?serviceKey=$serviceKey"
           "&mapX=$lng"
           "&mapY=$lat"
-          "&radius=${AppConstants.defaultRadius}"
+          "&radius=3000"
           "&arrange=E"
-          "&numOfRows=${AppConstants.defaultNumOfRows}"
+          "&numOfRows=20"
           "&pageNo=1"
           "&contentTypeId=$contentTypeId"
-          "&MobileOS=$mobileOS"
-          "&MobileApp=$mobileApp"
+          "&MobileOS=ETC"
+          "&MobileApp=Cospicker"
           "&_type=json",
     );
 
     try {
       final res = await http.get(url);
-      if (res.statusCode != 200) {
-        AppLogger.w('Tour API 응답 오류: ${res.statusCode}');
-        return [];
-      }
+      if (res.statusCode != 200) return [];
 
       final data = json.decode(res.body);
       final items = data["response"]["body"]["items"];
@@ -254,7 +329,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
       return [];
     } catch (e) {
-      ErrorHandler.logError(e, context: 'Tour API 호출');
+      // Tour API 오류: $e
       return [];
     }
   }
@@ -561,7 +636,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     arguments: {
                       "location": keyword,
                       "date": "",
-                      "people": AppConstants.defaultPeople,
+                      "people": 2,
                     },
                   );
                 },
@@ -666,6 +741,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
               saveRecentStay(fullData['contentid'].toString());
 
+              if (!mounted) return;
               Navigator.pushNamed(
                 context,
                 '/stayDetail',
@@ -682,22 +758,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: acc['firstimage'] ?? '',
+                image: DecorationImage(
+                  image: NetworkImage(acc['firstimage']),
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.error_outline),
-                  ),
                 ),
               ),
             ),
@@ -739,14 +802,18 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
           return GestureDetector(
             onTap: () async {
-              final fullData = await FirebaseService.getRestaurantItem(
-                rest['contentid'].toString(),
-              );
+              final doc = await FirebaseFirestore.instance
+                  .collection("restaurantItems")
+                  .doc(rest['contentid'].toString())
+                  .get();
 
-              if (fullData == null) return;
+              if (!doc.exists) return;
+
+              final fullData = doc.data() as Map<String, dynamic>;
 
               saveRecentRestaurant(fullData['contentid'].toString());
 
+              if (!mounted) return;
               Navigator.pushNamed(
                 context,
                 '/restaurantDetail',
@@ -761,22 +828,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedNetworkImage(
-                  imageUrl: rest['firstimage'] ?? '',
+                image: DecorationImage(
+                  image: NetworkImage(rest['firstimage']),
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[300],
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.error_outline),
-                  ),
                 ),
               ),
             ),

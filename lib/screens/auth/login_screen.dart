@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../home/HomeScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 
@@ -34,7 +35,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // 로그인 성공 → 홈 화면 이동
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+        );
       }
     } on FirebaseAuthException catch (e) {
       String message = '로그인 실패';
@@ -180,3 +184,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import '../../firebase_options.dart';
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -14,9 +16,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    await Future.delayed(const Duration(seconds: 2)); // 로고 2초 유지
+    await Future.delayed(Duration(seconds: 2)); // 로고 2초 유지
 
-    // Firebase는 이미 main.dart에서 초기화되었으므로 여기서는 체크만 함
+    // ⭐ Firebase 초기화 추가 (중요)
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
     User? user = FirebaseAuth.instance.currentUser;
 
     if (!mounted) return;

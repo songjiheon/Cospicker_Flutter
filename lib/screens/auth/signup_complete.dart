@@ -6,10 +6,11 @@ import 'dart:math';
 class SignupCompleteScreen extends StatefulWidget {
   const SignupCompleteScreen({super.key});
 
-   @override
-  _SignupCompleteScreenState createState() => _SignupCompleteScreenState();
+  @override
+  SignupCompleteScreenState createState() => SignupCompleteScreenState();
 }
-class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
+
+class SignupCompleteScreenState extends State<SignupCompleteScreen> {
 
   String generateRandomCode(int length) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -48,7 +49,7 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
         .doc(uid)
         .update({'friendCode': code});
 
-    // 친구코드 생성 완료 (로깅 불필요)
+    // 친구코드 생성 완료
   }
   @override
   void initState() {
@@ -128,3 +129,4 @@ class _SignupCompleteScreenState extends State<SignupCompleteScreen> {
     );
   }
 }
+

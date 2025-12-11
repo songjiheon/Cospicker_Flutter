@@ -120,7 +120,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final doc = docs[index];
-              final data = doc.data() as Map<String, dynamic>;
+              final data = doc.data();
 
               final isRead = data["isRead"] ?? false;
               final type = data["type"] ?? "system";

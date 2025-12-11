@@ -47,6 +47,8 @@ class _SignupScreenState extends State<SignupScreen> {
         "email": emailController.text.trim(),
       });
 
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("회원가입 성공!")),
       );
@@ -54,8 +56,9 @@ class _SignupScreenState extends State<SignupScreen> {
       // 회원가입 완료 화면으로 이동
       Navigator.pushNamed(context, '/signupsuccess');
 
-
     } catch (e) {
+      if (!mounted) return;
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("회원가입 실패: $e")),
       );
@@ -177,3 +180,4 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 }
+

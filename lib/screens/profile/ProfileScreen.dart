@@ -61,7 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // --------------------- 전체 로그아웃 Dialog ---------------------
-  // TODO: 필요시 사용
   // ignore: unused_element
   void _showLogoutAllDialog() {
     showDialog(

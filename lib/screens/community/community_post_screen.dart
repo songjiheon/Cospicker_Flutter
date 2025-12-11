@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '/screens/chat/ChatRoomScreen.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import '/screens/chat/chat_room_screen.dart';
+import 'CommunityEditScreen.dart';
+import 'CommunitySearchDetailScreen.dart';
 
 class Post {
   final String postId;
@@ -15,6 +18,7 @@ class Post {
   final int likeCount;
   final int commentCount;
   final String imageUrl;
+  final List<String> tags;
 
   Post({
     required this.postId,
@@ -28,6 +32,7 @@ class Post {
     required this.likeCount,
     required this.commentCount,
     required this.imageUrl,
+    required this.tags,
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -45,6 +50,7 @@ class Post {
       likeCount: data['likeCount'] ?? 0,
       commentCount: data['commentCount'] ?? 0,
       imageUrl: data['imageUrl'] ?? '',
+      tags: List<String>.from(data['tags'] ?? []),
     );
   }
 }
@@ -140,6 +146,113 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
     setState(() => isLiked = !isLiked);
   }
 
+  // ----------------- 게시글 수정 -----------------
+  Future<void> _editPost() async {
+    if (post == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection("Posts")
+        .doc(post!.postId)
+        .get();
+
+    if (!doc.exists) return;
+
+    final postData = doc.data()!;
+
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CommunityEditScreen(
+          postId: post!.postId,
+          postData: postData,
+        ),
+      ),
+    ).then((_) {
+      // 수정 후 게시글 다시 로드
+      if (mounted) _loadPost();
+    });
+  }
+
+  // ----------------- 게시글 삭제 -----------------
+  Future<void> _deletePost() async {
+    if (post == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("게시글 삭제"),
+        content: const Text("정말로 이 게시글을 삭제하시겠습니까?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("취소"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("삭제", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // 이미지가 있으면 Storage에서 삭제
+      if (post!.imageUrl.isNotEmpty) {
+        try {
+          final imageRef = FirebaseStorage.instance.refFromURL(post!.imageUrl);
+          await imageRef.delete();
+        } catch (e) {
+          // 이미지 삭제 실패해도 계속 진행
+          // 이미지 삭제 실패: $e
+        }
+      }
+
+      // 댓글 삭제
+      final commentsSnapshot = await FirebaseFirestore.instance
+          .collection("Posts")
+          .doc(post!.postId)
+          .collection("Comments")
+          .get();
+
+      for (var commentDoc in commentsSnapshot.docs) {
+        await commentDoc.reference.delete();
+      }
+
+      // 좋아요 삭제
+      final likesSnapshot = await FirebaseFirestore.instance
+          .collection("Posts")
+          .doc(post!.postId)
+          .collection("Likes")
+          .get();
+
+      for (var likeDoc in likesSnapshot.docs) {
+        await likeDoc.reference.delete();
+      }
+
+      // 게시글 삭제
+      await FirebaseFirestore.instance
+          .collection("Posts")
+          .doc(post!.postId)
+          .delete();
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("게시글이 삭제되었습니다.")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("삭제 중 오류가 발생했습니다: $e")),
+        );
+      }
+    }
+  }
+
   // ---------------------------
   // 댓글 + 대댓글 추가
   // ---------------------------
@@ -223,6 +336,9 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
       );
     }
 
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final isMyPost = currentUser != null && post!.uid == currentUser.uid;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -230,6 +346,18 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         foregroundColor: Colors.black,
+        actions: isMyPost
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: _editPost,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: _deletePost,
+                ),
+              ]
+            : null,
       ),
       body: Column(
         children: [
@@ -267,8 +395,10 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           radius: 22,
           backgroundImage: post!.profileUrl.isNotEmpty
               ? NetworkImage(post!.profileUrl)
-              : const AssetImage("assets/default_profile.png")
-          as ImageProvider,
+              : null,
+          child: post!.profileUrl.isEmpty
+              ? const Icon(Icons.person, color: Colors.grey)
+              : null,
         ),
         const SizedBox(width: 10),
         Column(
@@ -315,6 +445,44 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.network(post!.imageUrl),
+          ),
+        ],
+        if (post!.tags.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: post!.tags.map((tag) {
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CommunitySearchDetailScreen(
+                        keyword: tag,
+                        isTagSearch: true,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: TextStyle(
+                      color: Colors.blue.shade700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ],
@@ -365,6 +533,7 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
 
                 final roomId = await _createChatRoom(otherUid);
 
+                if (!mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -447,8 +616,10 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           radius: isReply ? 14 : 18,
           backgroundImage: (c["profileUrl"] ?? "").isNotEmpty
               ? NetworkImage(c["profileUrl"])
-              : const AssetImage("assets/default_profile.png")
-          as ImageProvider,
+              : null,
+          child: (c["profileUrl"] ?? "").isEmpty
+              ? Icon(Icons.person, color: Colors.grey, size: isReply ? 14 : 18)
+              : null,
         ),
         const SizedBox(width: 10),
 
@@ -564,3 +735,4 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
     );
   }
 }
+

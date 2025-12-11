@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cospicker/core/utils/error_handler.dart';
 
 class MyinfoScreen extends StatefulWidget {
   const MyinfoScreen({super.key});
@@ -87,13 +86,7 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
         profileImageUrl = downloadUrl;
       });
     } catch (e) {
-      if (mounted) {
-        ErrorHandler.handleError(
-          context,
-          e,
-          customMessage: '프로필 이미지 업로드에 실패했습니다.',
-        );
-      }
+      print("프로필 이미지 업로드 실패: $e");
     }
   }
 

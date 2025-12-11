@@ -105,14 +105,10 @@ class ChatRoomListScreen extends StatelessWidget {
                             }
 
                             final other = userSnap.data!;
-                            final lastMessage = (room["lastMessage"] as String?) ?? "메시지가 없습니다.";
+                            final lastMessage = room["lastMessage"] ?? "메시지가 없습니다.";
                             final lastTime = room["lastTime"];
 
                             final isMuted = muted.contains(otherUid);
-                            
-                            // null-safe 처리
-                            final otherName = (other["name"] as String?) ?? "익명";
-                            final otherProfileImage = (other["profileImageUrl"] as String?) ?? "";
 
                             return InkWell(
                               onTap: () {
@@ -128,10 +124,10 @@ class ChatRoomListScreen extends StatelessWidget {
                                   children: [
                                     CircleAvatar(
                                       radius: 27,
-                                      backgroundImage: otherProfileImage.isNotEmpty
-                                          ? NetworkImage(otherProfileImage)
+                                      backgroundImage: other["profileImageUrl"] != ""
+                                          ? NetworkImage(other["profileImageUrl"])
                                           : null,
-                                      child: otherProfileImage.isEmpty
+                                      child: other["profileImageUrl"] == ""
                                           ? const Icon(Icons.person, size: 32)
                                           : null,
                                     ),
@@ -145,7 +141,7 @@ class ChatRoomListScreen extends StatelessWidget {
                                           Row(
                                             children: [
                                               Text(
-                                                otherName,
+                                                other["name"],
                                                 style: const TextStyle(
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 16,

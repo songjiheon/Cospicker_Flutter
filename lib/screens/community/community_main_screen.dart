@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CommunityPostScreen.dart';
+import 'community_post_screen.dart';
 import 'CommunitySearchScreen.dart';
+import 'CommunitySearchDetailScreen.dart';
 
 class Post {
   final String postId;
@@ -14,6 +15,7 @@ class Post {
   final DateTime createdAt;
   final String postType;
   final String profileUrl;
+  final List<String> tags;
 
   Post({
     required this.postId,
@@ -26,6 +28,7 @@ class Post {
     required this.createdAt,
     required this.postType,
     required this.profileUrl,
+    required this.tags,
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -41,16 +44,19 @@ class Post {
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       postType: data['postType'] ?? '일반글',
       profileUrl: data['profileUrl'] ?? '',
+      tags: List<String>.from(data['tags'] ?? []),
     );
   }
 }
 
 class CommunityMainScreen extends StatefulWidget {
+  const CommunityMainScreen({super.key});
+
   @override
-  _CommunityMainScreenState createState() => _CommunityMainScreenState();
+  CommunityMainScreenState createState() => CommunityMainScreenState();
 }
 
-class _CommunityMainScreenState extends State<CommunityMainScreen> {
+class CommunityMainScreenState extends State<CommunityMainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,8 +144,9 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData)
-                  return Center(child: CircularProgressIndicator());
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
                 final posts = snapshot.data!.docs
                     .map((doc) => Post.fromFirestore(doc))
@@ -207,8 +214,10 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
                   radius: 22,
                   backgroundImage: post.profileUrl.isNotEmpty
                       ? NetworkImage(post.profileUrl)
-                      : AssetImage('assets/default_profile.png')
-                  as ImageProvider,
+                      : null,
+                  child: post.profileUrl.isEmpty
+                      ? const Icon(Icons.person, color: Colors.grey)
+                      : null,
                 ),
                 SizedBox(width: 12),
 
@@ -273,6 +282,48 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
             SizedBox(height: 12),
 
             // -------------------------
+            // 태그 표시
+            // -------------------------
+            if (post.tags.isNotEmpty)
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: post.tags.map((tag) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CommunitySearchDetailScreen(
+                            keyword: tag,
+                            isTagSearch: true,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: TextStyle(
+                          color: Colors.blue.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+            if (post.tags.isNotEmpty) SizedBox(height: 12),
+
+            // -------------------------
             // 좋아요 / 댓글
             // -------------------------
             Row(
@@ -306,3 +357,4 @@ class _CommunityMainScreenState extends State<CommunityMainScreen> {
     return "${diff.inDays}일전";
   }
 }
+

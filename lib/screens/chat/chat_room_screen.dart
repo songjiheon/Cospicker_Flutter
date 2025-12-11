@@ -54,23 +54,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         .doc(widget.roomId)
         .get();
 
-    if (!doc.exists) {
-      // 채팅방이 존재하지 않으면 뒤로가기
-      if (mounted) Navigator.pop(context);
-      return;
-    }
-
-    final members = (doc["users"] as List<dynamic>?) ?? [];
-    otherUid = members.firstWhere(
-      (uid) => uid != currentUser.uid,
-      orElse: () => null,
-    ) as String?;
-
-    if (otherUid == null) {
-      // 상대방을 찾을 수 없으면 뒤로가기
-      if (mounted) Navigator.pop(context);
-      return;
-    }
+    List members = doc["users"];
+    otherUid = members.firstWhere((uid) => uid != currentUser.uid);
 
     otherUserData = await _getUserInfo(otherUid!);
     setState(() {});
@@ -115,8 +100,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       "message": text,
       "imageUrl": imageUrl,
       "senderUid": currentUser.uid,
-      "senderName": (_currentUserData?["name"] as String?) ?? "익명",
-      "senderPhoto": (_currentUserData?["profileImageUrl"] as String?) ?? "",
+      "senderName": _currentUserData?["name"],
+      "senderPhoto": _currentUserData?["profileImageUrl"],
       "time": Timestamp.now(),
       "seenBy": [currentUser.uid],
     });
@@ -175,7 +160,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  Widget _buildReadStatus(List<dynamic> seenBy) {
+  Widget _buildReadStatus(List seenBy) {
     final otherSeen = seenBy.any((id) => id != currentUser.uid);
 
     return Padding(
@@ -257,7 +242,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   .update({
                 "blocked": FieldValue.arrayUnion([otherUid])
               });
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
             },
           ),
           ListTile(
@@ -286,7 +271,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   .update({
                 "users": FieldValue.arrayRemove([currentUser.uid])
               });
-              Navigator.pop(context);
+              if (mounted) Navigator.pop(context);
             },
           ),
           const SizedBox(height: 10),
@@ -320,8 +305,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             CircleAvatar(
               backgroundImage: profileImg.isNotEmpty
                   ? NetworkImage(profileImg)
-                  : const AssetImage("assets/default_profile.png")
-              as ImageProvider,
+                  : null,
+              child: profileImg.isEmpty
+                  ? const Icon(Icons.person, color: Colors.grey)
+                  : null,
             ),
             const SizedBox(width: 10),
 
@@ -376,15 +363,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   itemCount: msgs.length,
                   itemBuilder: (context, index) {
                     final m = msgs[index];
-                    final bool isMe = (m["senderUid"] as String?) == currentUser.uid;
+                    final bool isMe = m["senderUid"] == currentUser.uid;
 
                     _markAsSeen(m.id);
-                    
-                    // null-safe 처리
-                    final senderPhoto = (m["senderPhoto"] as String?) ?? "";
-                    final message = (m["message"] as String?) ?? "";
-                    final imageUrl = (m["imageUrl"] as String?) ?? "";
-                    final seenBy = (m["seenBy"] as List<dynamic>?) ?? [];
 
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -395,16 +376,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         if (!isMe)
                           CircleAvatar(
                             radius: 18,
-                            child: senderPhoto.isNotEmpty
+                            child: m["senderPhoto"] != null &&
+                                m["senderPhoto"] != ""
                                 ? ClipOval(
                               child: Image.network(
-                                senderPhoto,
+                                m["senderPhoto"],
                                 width: 36,
                                 height: 36,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.person);
-                                },
                               ),
                             )
                                 : const Icon(Icons.person),
@@ -432,29 +411,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                   crossAxisAlignment:
                                   CrossAxisAlignment.end,
                                   children: [
-                                    if (message.isNotEmpty)
+                                    if (m["message"] != "")
                                       Text(
-                                        message,
+                                        m["message"],
                                         style: const TextStyle(fontSize: 15),
                                       ),
 
-                                    if (imageUrl.isNotEmpty)
+                                    if (m["imageUrl"] != null &&
+                                        m["imageUrl"] != "")
                                       Padding(
                                         padding: const EdgeInsets.only(top: 6),
                                         child: ClipRRect(
                                           borderRadius:
                                           BorderRadius.circular(10),
                                           child: Image.network(
-                                            imageUrl,
+                                            m["imageUrl"],
                                             width: 180,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const SizedBox(
-                                                width: 180,
-                                                height: 100,
-                                                child: Icon(Icons.error),
-                                              );
-                                            },
                                           ),
                                         ),
                                       ),
@@ -471,7 +444,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               ),
 
                               // 읽음 여부
-                              if (isMe) _buildReadStatus(seenBy),
+                              if (isMe) _buildReadStatus(m["seenBy"] ?? []),
                             ],
                           ),
                         ),
@@ -536,3 +509,4 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 }
+
