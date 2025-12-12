@@ -352,31 +352,120 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       _loadingAccommodations = false;
     });
 
-    await _saveStayItemsToFirestore(filtered, city);
+    await _saveTourItemsToFirestore(filtered, city);
+  }
+
+  List<List<T>> _chunkList<T>(List<T> list, int chunkSize) {
+    List<List<T>> chunks = [];
+    for (var i = 0; i < list.length; i += chunkSize) {
+      chunks.add(list.sublist(i, i + chunkSize > list.length ? list.length : i + chunkSize));
+    }
+    return chunks;
+  }
+
+  Future<Set<String>> _getExistingStayItemsIds(List<dynamic> items) async {
+    final ids = items.map((e) => e["contentid"].toString()).toList();
+
+    final qs = await FirebaseFirestore.instance
+        .collection("tourItems")
+        .where(FieldPath.documentId, whereIn: ids.length > 10 ? ids.take(10).toList() : ids)
+        .get();
+
+    final existing = <String>{};
+    existing.addAll(qs.docs.map((e) => e.id));
+
+    if (ids.length > 10) {
+      for (var chunk in _chunkList(ids.skip(10).toList(), 10)) {
+        final res = await FirebaseFirestore.instance
+            .collection("tourItems")
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+        existing.addAll(res.docs.map((e) => e.id));
+      }
+    }
+    return existing;
   }
 
   // Firestore 저장(숙소)
-  Future<void> _saveStayItemsToFirestore(
-      List<dynamic> items,
-      String location,
-      ) async {
+  Future<void> _saveTourItemsToFirestore(List<dynamic> items, String location) async {
     final batch = FirebaseFirestore.instance.batch();
     final random = Random();
 
+    final existingIds = await _getExistingStayItemsIds(items);
+
+    final roomImages = [
+      "https://cdn.pixabay.com/photo/2020/10/18/09/16/bedroom-5664221_1280.jpg",
+      "https://cdn.pixabay.com/photo/2018/06/14/21/15/bedroom-3475656_1280.jpg",
+      "https://cdn.pixabay.com/photo/2020/02/01/06/12/living-room-4809587_640.jpg",
+      "https://cdn.pixabay.com/photo/2021/12/18/06/13/hotel-6878058_640.jpg",
+      "https://cdn.pixabay.com/photo/2016/06/10/01/05/hotel-room-1447201_640.jpg",
+      "https://cdn.pixabay.com/photo/2015/01/16/11/19/hotel-601327_640.jpg",
+      "https://cdn.pixabay.com/photo/2020/01/23/02/42/bedroom-4786791_640.jpg",
+      "https://cdn.pixabay.com/photo/2014/09/25/18/05/bedroom-460762_640.jpg",
+      "https://cdn.pixabay.com/photo/2020/05/14/16/51/bed-5170531_640.jpg",
+      "https://cdn.pixabay.com/photo/2020/06/24/17/47/room-5337097_640.jpg",
+    ];
+
+    final descriptions = [
+      "편안한 휴식을 위한 최적의 공간을 제공합니다.",
+      "여행객에게 사랑받는 가성비 최고의 숙소입니다.",
+      "깨끗한 객실과 친절한 서비스로 만족도를 높였습니다.",
+      "여유로운 분위기에서 힐링할 수 있는 공간입니다.",
+      "모던한 인테리어와 넓은 객실이 특징입니다.",
+      "가족, 커플 여행객 모두에게 추천하는 숙소입니다.",
+      "넓고 쾌적한 침구로 편안한 밤을 보장합니다.",
+      "실내외 시설이 잘 갖춰져 있어 만족도가 높은 숙소입니다.",
+    ];
+
     for (var item in items) {
-      final id = item["contentid"].toString();
-      final docRef =
-      FirebaseFirestore.instance.collection("tourItems").doc(id);
+      final id = item["contentid"]?.toString();
+      if (id == null) continue;
+
+      if (existingIds.contains(id)) continue;
+
+      final docRef = FirebaseFirestore.instance.collection("tourItems").doc(id);
+
+      int price = (10 * (10 + random.nextInt(41))) * 1000;
+      int salePrice = (price * 0.8 / 1000).round() * 1000;
+      int review = random.nextInt(501);
+      double rating = (30 + random.nextInt(21)) / 10.0;
+
+      String mainRoomImage = roomImages[random.nextInt(roomImages.length)];
 
       final newItem = Map<String, dynamic>.from(item);
       newItem.addAll({
-        "city": location,
-        "price": (10000 + random.nextInt(40000)),
-        "rating": (30 + random.nextInt(21)) / 10.0,
-        "review": random.nextInt(500),
+        "city": location.trim(),
+        "price": price,
+        "salePrice": salePrice,
+        "rating": rating,
+        "review": review,
+        "roomImage": mainRoomImage,
+        "description": descriptions[random.nextInt(descriptions.length)],
       });
 
       batch.set(docRef, newItem);
+
+      // 룸 타입 랜덤 생성
+      final roomTypes = ["스탠다드 룸"];
+      if (random.nextBool()) roomTypes.add("디럭스 룸");
+      if (random.nextBool()) roomTypes.add("스위트 룸");
+
+      for (var roomType in roomTypes) {
+        final roomRef = docRef.collection("rooms").doc();
+
+        int roomPrice = price;
+        if (roomType == "디럭스 룸") roomPrice = (price * 1.5).round();
+        if (roomType == "스위트 룸") roomPrice = (price * 2).round();
+
+        batch.set(roomRef, {
+          "roomName": roomType,
+          "price": roomPrice,
+          "salePrice": (roomPrice * 0.8 / 1000).round() * 1000,
+          "roomImage": roomImages[random.nextInt(roomImages.length)],
+          "standard": 2,
+          "max": 2 + random.nextInt(3),
+        });
+      }
     }
 
     await batch.commit();
@@ -405,24 +494,40 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   // Firestore 저장(맛집)
-  Future<void> _saveRestaurantItemsToFirestore(
-      List<dynamic> items,
-      String location,
-      ) async {
+  Future<void> _saveRestaurantItemsToFirestore(List<dynamic> items, String location) async {
     final batch = FirebaseFirestore.instance.batch();
     final random = Random();
 
+    final descriptions = [
+      "신선한 재료와 정성 가득한 조리로 많은 이들이 찾는 인기 맛집입니다.",
+      "현지인들에게 사랑받는 곳으로, 깊은 풍미와 정직한 맛이 특징입니다.",
+      "깔끔한 맛과 푸짐한 양으로 누구나 만족할 만한 식사를 제공합니다.",
+      "편안한 분위기에서 다양한 메뉴를 즐길 수 있는 곳입니다.",
+      "특별한 조리법으로 재료 본연의 풍미를 살린 요리를 선보입니다.",
+      "가성비 좋고 맛있는 음식으로 꾸준히 호평받고 있는 식당입니다.",
+      "담백하고 자극적이지 않은 맛으로 남녀노소 모두에게 추천합니다.",
+      "트렌디한 감성과 맛을 함께 느낄 수 있는 인기 있는 음식점입니다.",
+      "정갈한 음식과 친절한 서비스로 재방문율이 높은 맛집입니다.",
+      "풍부한 향과 깔끔한 뒷맛을 자랑하며 많은 여행객들이 찾는 명소입니다.",
+    ];
+
+
     for (var item in items) {
-      final id = item["contentid"].toString();
-      final docRef =
-      FirebaseFirestore.instance.collection("restaurantItems").doc(id);
+      final docRef = FirebaseFirestore.instance
+          .collection("restaurantItems")
+          .doc(item["contentid"]);
+
+      int price = (5000 + random.nextInt(20000)); // 일반 음식 평균 가격대
+      double rating = (30 + random.nextInt(21)) / 10.0;
+      int review = random.nextInt(2000);
 
       final newItem = Map<String, dynamic>.from(item);
       newItem.addAll({
         "city": location,
-        "avgPrice": (5000 + random.nextInt(20000)),
-        "rating": (30 + random.nextInt(21)) / 10.0,
-        "review": random.nextInt(500),
+        "avgPrice": price,
+        "rating": rating,
+        "review": review,
+        "description": descriptions[random.nextInt(descriptions.length)],
       });
 
       batch.set(docRef, newItem);
