@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cospicker/models/content_type.dart';
 
 // 데이터 로딩 상태를 명확히 구분하기 위한 열거형 추가
@@ -52,7 +53,7 @@ Future<List<dynamic>> fetchTourApiLocationBased({
   int numOfRows = 10,
   int pageNo = 1,
 }) async {
-  const String serviceKey =
+  final String serviceKey = dotenv.env['TOUR_API_SERVICE_KEY'] ??
       "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
   const String mobileOS = "ETC";
   const String mobileApp = "Cospicker";

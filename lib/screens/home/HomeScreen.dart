@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:math';
 import 'package:geocoding/geocoding.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cospicker/models/content_type.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -178,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       final place = placemarks.first;
       return place.administrativeArea ?? "Unknown";
     } catch (e) {
-      print("도시 변환 실패: $e");
+      // 도시 변환 실패
       return "Unknown";
     }
   }
@@ -297,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       double lng,
       int contentTypeId, // 32 = 숙소, 39 = 맛집
       ) async {
-    const serviceKey =
+    final serviceKey = dotenv.env['TOUR_API_SERVICE_KEY'] ??
         "4e7c9d80475f8c84a482b22bc87a5c3376d82411b81a289fecdabaa83d75e26f";
 
     final url = Uri.parse(

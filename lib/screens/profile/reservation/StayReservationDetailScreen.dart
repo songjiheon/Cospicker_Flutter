@@ -50,7 +50,7 @@ class _StayReservationScreenState extends State<StayReservationScreen>
 
       if (today.isAfter(checkOut)) {
         await doc.reference.update({"status": "completed"});
-        print("✔ 자동 완료 처리됨 → ${doc.id}");
+        // 자동 완료 처리됨
       }
     }
   }

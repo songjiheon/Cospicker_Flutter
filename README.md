@@ -1,186 +1,411 @@
-📱 Cospicker
----------
-여행 숙소, 맛집, 일정, 커뮤니티 기능을 한곳에 모은
-통합 여행 플랫폼 애플리케이션
+# 📱 Cospicker
 
-🌍 프로젝트 소개
-------
-Cospicker는 사용자들이 여행 정보를 쉽게 검색하고,
-다른 사용자들과 경험을 공유할 수 있도록 설계된 앱입니다.
+<div align="center">
 
-숙소 · 맛집 검색
+**여행 숙소, 맛집, 일정, 커뮤니티 기능을 한곳에 모은 통합 여행 플랫폼 애플리케이션**
 
-커뮤니티 기반 정보 공유
+[![Flutter](https://img.shields.io/badge/Flutter-3.10.0-02569B?logo=flutter)](https://flutter.dev/)
+[![Firebase](https://img.shields.io/badge/Firebase-Enabled-FFCA28?logo=firebase)](https://firebase.google.com/)
+[![Dart](https://img.shields.io/badge/Dart-3.10.0-0175C2?logo=dart)](https://dart.dev/)
 
-여행 플래너처럼 활용 가능
+</div>
 
-Firebase 기반 사용자 인증 및 데이터 관리
+---
 
+## 📋 목차
 
+- [프로젝트 소개](#-프로젝트-소개)
+- [주요 기능](#-주요-기능)
+- [기술 스택](#️-기술-스택)
+- [시작하기](#-시작하기)
+  - [필수 요구사항](#필수-요구사항)
+  - [설치 및 실행](#설치-및-실행)
+  - [환경 변수 설정](#환경-변수-설정)
+- [프로젝트 구조](#-프로젝트-구조)
+- [주요 기능 상세](#-주요-기능-상세)
+- [개발팀](#-개발팀)
+- [참고 자료](#-참고-자료)
 
-초기 버전은 Android Native (Kotlin) 로 개발되었으며,
-확장성과 유지보수 효율성 향상을 위해
-Flutter 기반으로 리빌딩(Migration) 되었습니다.
+---
 
-💡 현재 제출 및 배포 버전은 Flutter + Firebase 기반 최신 버전입니다.
+## 🌍 프로젝트 소개
 
-👥 멤버 구성 및 역할 
---------------
-▪ 프론트엔드
+**Cospicker**는 사용자들이 여행 정보를 쉽게 검색하고, 다른 사용자들과 경험을 공유할 수 있도록 설계된 Flutter 기반 모바일 애플리케이션입니다.
 
-팀장 : 김선욱 - Figma UI 설계
+### 프로젝트 배경
 
-팀원 : 권오현 - Figma UI 설계 , 전체적인 UI 개발
+- 초기 버전은 **Android Native (Kotlin)**로 개발되었습니다
+- 확장성과 유지보수 효율성 향상을 위해 **Flutter 기반으로 리빌딩(Migration)** 되었습니다
+- 현재 버전은 **Flutter + Firebase** 기반 최신 버전입니다
 
-▪ 백엔드
+### 핵심 가치
 
-팀원 : 최동렬
+✅ **통합 여행 플랫폼**: 숙소, 맛집, 커뮤니티를 한 앱에서 제공  
+✅ **실시간 정보 공유**: 사용자 간 경험과 리뷰 공유  
+✅ **지역 기반 검색**: 위치 기반 숙소 및 맛집 추천  
+✅ **편리한 예약 관리**: 여행 일정 및 예약 정보 관리
 
-팀원 : 송지헌 - 서버 구축, API 연동
+---
 
+## ✨ 주요 기능
 
+### 🔐 사용자 인증
+- 이메일/비밀번호 기반 회원가입 및 로그인
+- Firebase Authentication을 통한 안전한 사용자 관리
+- 프로필 정보 수정 및 관리
 
-🛠 개발 환경
---------------
+### 🏨 숙소 검색 및 예약
+- 지역 및 날짜 기반 숙소 검색
+- 상세 숙소 정보 및 객실 선택
+- 실시간 예약 관리
+- 리뷰 작성 및 확인
 
-백엔드 : FireBase  
-개발 환경 : Dart  
-IDE : Android Studio  
-빌드 시스템 : Gradle  
-협업 및 배포 : GitHub  
+### 🍽️ 맛집 검색
+- 한국관광공사 API 연동 맛집 정보
+- 지역별 맛집 검색 및 상세 정보
+- 리뷰 및 평점 확인
+- 지도 기반 위치 확인
 
+### 💬 커뮤니티
+- 여행 관련 게시글 작성 및 조회
+- 이미지 업로드 지원
+- 댓글 및 좋아요 기능
+- 게시글 검색 및 필터링
 
+### 💭 실시간 채팅
+- 1:1 채팅 기능
+- 채팅방 목록 관리
+- 사용자 차단 기능
 
-<strong>📂 Cospicker 프로젝트 구조 (Flutter 버전)</strong>  
+### 📍 지도 기능
+- Google Maps API 연동
+- 현재 위치 기반 근처 숙소/맛집 검색
+- 지도에서 직접 위치 확인
 
+### ⭐ 찜하기 & 최근 본 항목
+- 찜 목록 폴더 관리
+- 최근 본 숙소/맛집 기록
+- 개인화된 추천 기능
 
-```plaintext
-lib/
-├── main.dart
-├── firebase_options.dart
-│
-├── models/
-│   └── content_type.dart
-│
-├── screens/
-│   ├── auth/
-│   │   ├── LoginScreen.dart
-│   │   ├── SignupScreen.dart
-│   │   └── SignupComplete.dart
-│   │
-│   ├── chat/
-│   │   ├── BlockedUsersScreen.dart
-│   │   ├── ChatRoomListScreen.dart
-│   │   ├── ChatRoomScreen.dart
-│   │   ├── ChatRoom.dart
-│   │   └── CreateChatRoom.dart
-│   │
-│   ├── community/
-│   │   ├── CommunityMainScreen.dart
-│   │   ├── CommunityPostScreen.dart
-│   │   ├── CommunitySearchScreen.dart
-│   │   ├── CommunitySearchDetailScreen.dart
-│   │   └── CommunityWriting.dart
-│   │
-│   ├── home/
-│   │   └── HomeScreen.dart
-│   │
-│   ├── near/
-│   │   └── NearMapScreen.dart
-│   │
-│   ├── payment/
-│   │   ├── PaymentLoadingScreen.dart
-│   │   └── PaymentCompleteScreen.dart
-│   │
-│   ├── profile/
-│   │   ├── comment/
-│   │   │   └── MyComment.dart
-│   │   │
-│   │   ├── Info/
-│   │   │   ├── EditBirth.dart
-│   │   │   ├── EditGender.dart
-│   │   │   ├── EditName.dart
-│   │   │   ├── EditNickname.dart
-│   │   │   ├── EditPassword.dart
-│   │   │   └── EditPhoneNumber.dart
-│   │   │
-│   │   ├── notice/
-│   │   │   ├── Notice.dart
-│   │   │   └── NoticeDetail.dart
-│   │   │
-│   │   ├── notifications/
-│   │   │   └── NotificationScreen.dart
-│   │   │
-│   │   ├── post/
-│   │   │   └── MyPost.dart
-│   │   │
-│   │   ├── recent/
-│   │   │   └── RecentViewScreen.dart
-│   │   │
-│   │   └── reservation/
-│   │       ├── MyinfoScreen.dart
-│   │       └── ProfileScreen.dart
-│   │
-│   ├── restaurant/     
-│   │   ├── RestaurantDetailScreen.dart
-│   │   ├── RestaurantListScreen.dart
-│   │   ├── RestaurantMapScreen.dart
-│   │   ├── RestaurantReviewScreen.dart
-│   │   └── RestaurantSearchScreen.dart
-│   │
-│   ├── splash/
-│   │   └── SplashScreen.dart
-│   │
-│   ├── stay/
-│   │   ├── StayDatePeopleScreen.dart
-│   │   ├── StayDetailScreen.dart
-│   │   ├── StayListScreen.dart
-│   │   ├── StayPaymentScreen.dart
-│   │   ├── StayReviewPolicyScreen.dart
-│   │   ├── StayReviewScreen.dart
-│   │   ├── StayRoomDetailScreen.dart
-│   │   ├── StayRoomListScreen.dart
-│   │   └── StaySearchScreen.dart
-│   │
-│   ├── Widget/
-│   │   └── BottomNavItem.dart
-│   │
-│   └── wish/
-│       ├── WishListScreen.dart
-│       └── WishFolderDetailScreen.dart
-│
-└── tools/
-    └── firebase_options.dart
+### 📱 프로필 관리
+- 사용자 정보 수정 (이름, 전화번호, 생년월일 등)
+- 내 게시글 및 댓글 관리
+- 알림 설정
+- 공지사항 확인
 
+---
 
+## 🛠️ 기술 스택
 
+### Frontend
+- **프레임워크**: Flutter 3.10.0
+- **언어**: Dart 3.10.0
+- **상태 관리**: StatefulWidget, Provider 패턴
+- **UI/UX**: Material Design
+
+### Backend & Database
+- **백엔드**: Firebase
+  - Firebase Authentication (사용자 인증)
+  - Cloud Firestore (실시간 데이터베이스)
+  - Firebase Storage (이미지 저장)
+  - Firebase Realtime Database (채팅 데이터)
+
+### 외부 API
+- **Google Maps API**: 지도 및 위치 서비스
+- **한국관광공사 Tour API**: 숙소 및 맛집 정보
+
+### 개발 도구
+- **IDE**: Android Studio
+- **빌드 시스템**: Gradle
+- **버전 관리**: Git, GitHub
+- **환경 변수 관리**: flutter_dotenv
+
+### 주요 패키지
 ```
------------------------
+firebase_core: ^4.2.1
+firebase_auth: ^6.1.2
+cloud_firestore: ^6.1.0
+firebase_storage: ^13.0.4
+google_maps_flutter: ^2.14.0
+geolocator: ^14.0.2
+http: ^1.2.0
+image_picker: ^1.2.1
+flutter_dotenv: ^5.1.0
+```
 
-🚀 실행 방법
--------------
-```plaintext
-flutter pub get  
+---
+
+## 🚀 시작하기
+
+### 필수 요구사항
+
+다음 도구들이 설치되어 있어야 합니다:
+
+- **Flutter SDK** (3.10.0 이상)
+  ```bash
+  flutter --version
+  ```
+- **Dart SDK** (3.10.0 이상)
+- **Android Studio** 또는 **VS Code** (Flutter 확장 설치)
+- **Android SDK** (Android 개발용)
+- **Xcode** (iOS 개발용, macOS만 필요)
+- **Git**
+
+### 설치 및 실행
+
+#### 1. 저장소 클론
+
+```bash
+git clone https://github.com/songjiheon/Cospicker_Flutter.git
+cd Cospicker_Flutter
+```
+
+#### 2. 의존성 설치
+
+```bash
+flutter pub get
+```
+
+#### 3. Firebase 설정
+
+프로젝트는 Firebase를 사용하므로 다음 파일이 필요합니다:
+
+- **Android**: `android/app/google-services.json`
+  - Firebase Console에서 다운로드하여 `android/app/` 폴더에 배치
+- **iOS**: `ios/Runner/GoogleService-Info.plist`
+  - Firebase Console에서 다운로드하여 `ios/Runner/` 폴더에 배치
+
+Firebase 프로젝트 설정: [Firebase Console](https://console.firebase.google.com/project/travel-planner-app-e6167/overview?hl=ko)
+
+#### 4. 환경 변수 설정
+
+프로젝트 루트 디렉토리에 `.env` 파일을 생성합니다:
+
+```bash
+# 프로젝트 루트에 .env 파일 생성
+touch .env
+```
+
+`.env` 파일에 다음 내용을 추가하세요:
+
+```env
+# Google Maps API Key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# Korean Tourism API Service Key
+TOUR_API_SERVICE_KEY=your_tour_api_service_key_here
+```
+
+**참고**: 
+- `.env` 파일은 `.gitignore`에 포함되어 Git에 커밋되지 않습니다
+- `.env` 파일이 없어도 앱은 동작합니다 (fallback 값 사용)
+- 상세한 설정 방법은 [ENV_SETUP.md](./ENV_SETUP.md) 참고
+
+#### 5. 앱 실행
+
+**Android 실행:**
+```bash
 flutter run
 ```
-📎 저장소 구조
-----------------
-Repo	설명  
-  
-🔹 https://github.com/cdr051/AndroidProgramming  
-	Kotlin 기반 초기 개발 버전  
-    
-🔹 https://github.com/songjiheon/Cospicker_Flutter  
-	최종 제출용 Flutter 버전  
 
------------------  
-🔹 https://console.firebase.google.com/project/travel-planner-app-e6167/overview?hl=ko&fb_gclid=Cj0KCQiAi9rJBhCYARIsALyPDts3UZX0kWVXE1WeBnU0TI44YW5LwZOjjcxTKmWQMrB8KCK6HigV72QaAsIOEALw_wcB  
-	firebase 주소  
+**특정 디바이스에서 실행:**
+```bash
+# 연결된 디바이스 확인
+flutter devices
 
+# 특정 디바이스에서 실행
+flutter run -d <device_id>
+```
 
-🏁 마무리
-----------------
-본 프로젝트는 사용자 편의성과 확장성을 기반으로  
-여행 플랫폼 서비스를 모바일 환경에서 구현한 결과물입니다.  
-향후 추천 알고리즘, 지역 기반 서비스, 여행 일정 자동 생성 기능을 목표로 확장 가능합니다.  
+**릴리즈 모드 빌드 (Android APK):**
+```bash
+flutter build apk --release
+```
 
+**iOS 실행 (macOS만):**
+```bash
+flutter run -d ios
+```
+
+### 문제 해결
+
+#### 빌드 오류 발생 시
+
+1. **의존성 재설치**
+   ```bash
+   flutter clean
+   flutter pub get
+   ```
+
+2. **Flutter 업데이트**
+   ```bash
+   flutter upgrade
+   ```
+
+3. **IDE 캐시 정리** (Android Studio)
+   - File → Invalidate Caches / Restart
+
+---
+
+## 📂 프로젝트 구조
+
+```
+lib/
+├── main.dart                      # 앱 진입점 및 라우팅 설정
+├── firebase_options.dart          # Firebase 설정 파일
+│
+├── models/                        # 데이터 모델
+│   └── content_type.dart          # 콘텐츠 타입 enum (숙소/맛집)
+│
+├── screens/                       # 화면 구성
+│   ├── auth/                      # 인증 관련 화면
+│   │   ├── login_screen.dart      # 로그인
+│   │   ├── signup_screen.dart     # 회원가입
+│   │   └── signup_complete.dart   # 회원가입 완료
+│   │
+│   ├── home/                      # 홈 화면
+│   │   └── HomeScreen.dart        # 메인 홈 화면
+│   │
+│   ├── stay/                      # 숙소 관련
+│   │   ├── StaySearchScreen.dart  # 숙소 검색
+│   │   ├── StayListScreen.dart    # 숙소 목록
+│   │   ├── StayDetailScreen.dart  # 숙소 상세
+│   │   ├── StayRoomListScreen.dart# 객실 목록
+│   │   ├── StayPaymentScreen.dart # 결제 화면
+│   │   └── ...
+│   │
+│   ├── restaurant/                # 맛집 관련
+│   │   ├── RestaurantSearchScreen.dart  # 맛집 검색
+│   │   ├── RestaurantListScreen.dart    # 맛집 목록
+│   │   ├── RestaurantDetailScreen.dart  # 맛집 상세
+│   │   └── ...
+│   │
+│   ├── community/                 # 커뮤니티
+│   │   ├── CommunityMainScreen.dart     # 커뮤니티 메인
+│   │   ├── CommunityWriting.dart        # 게시글 작성
+│   │   ├── CommunityPostScreen.dart     # 게시글 상세
+│   │   └── ...
+│   │
+│   ├── chat/                      # 채팅
+│   │   ├── ChatRoomListScreen.dart      # 채팅방 목록
+│   │   ├── ChatRoomScreen.dart          # 채팅 화면
+│   │   └── ...
+│   │
+│   ├── profile/                   # 프로필
+│   │   ├── ProfileScreen.dart           # 프로필 메인
+│   │   ├── MyinfoScreen.dart           # 내 정보
+│   │   ├── Info/                        # 정보 수정
+│   │   ├── reservation/                 # 예약 관리
+│   │   └── ...
+│   │
+│   ├── near/                      # 근처 검색
+│   │   └── NearMapScreen.dart           # 지도 기반 검색
+│   │
+│   ├── wish/                      # 찜하기
+│   │   ├── WishListScreen.dart          # 찜 목록
+│   │   └── WishFolderDetailScreen.dart  # 찜 폴더 상세
+│   │
+│   └── splash/                    # 스플래시
+│       └── SplashScreen.dart            # 시작 화면
+│
+├── widgets/                       # 재사용 가능한 위젯
+│   └── home/
+│
+├── core/                          # 핵심 기능
+│   ├── constants/                 # 상수 정의
+│   ├── services/                  # 서비스 레이어
+│   └── utils/                     # 유틸리티 함수
+│
+└── tools/                         # 개발 도구
+    └── fix__reservations.dart     # 예약 데이터 수정 스크립트
+```
+
+---
+
+## 🎯 주요 기능 상세
+
+### 1. 숙소 예약 시스템
+- 날짜 및 인원 선택
+- 객실 타입별 상세 정보 제공
+- 실시간 예약 가능 여부 확인
+- 예약 내역 관리 및 상태 추적
+
+### 2. 맛집 검색 시스템
+- 지역명 또는 키워드 검색
+- 한국관광공사 API를 통한 정확한 정보 제공
+- 지도에서 위치 확인
+- 리뷰 및 평점 시스템
+
+### 3. 커뮤니티 기능
+- 카테고리별 게시글 분류
+- 이미지 다중 업로드
+- 댓글 및 좋아요
+- 게시글 수정 및 삭제
+
+### 4. 실시간 채팅
+- Firebase Realtime Database 활용
+- 1:1 대화 기능
+- 채팅방 목록 실시간 업데이트
+- 사용자 차단 기능
+
+### 5. 위치 기반 서비스
+- Geolocator를 통한 현재 위치 확인
+- 반경 내 숙소/맛집 검색
+- Google Maps 통합
+
+---
+
+## 👥 개발팀
+
+### 프론트엔드
+- **김선욱** (팀장) - Figma UI 설계
+- **권오현** - Figma UI 설계, 전체적인 UI 개발
+
+### 백엔드
+- **최동렬** - 서버 구축, API 연동
+- **송지헌** - 서버 구축, API 연동
+
+---
+
+## 📎 참고 자료
+
+### 저장소
+- 🔹 [Kotlin 기반 초기 버전](https://github.com/cdr051/AndroidProgramming)
+- 🔹 [Flutter 최종 버전](https://github.com/songjiheon/Cospicker_Flutter)
+
+### Firebase
+- 🔹 [Firebase Console](https://console.firebase.google.com/project/travel-planner-app-e6167/overview?hl=ko)
+
+### 외부 API
+- [Google Maps API](https://developers.google.com/maps)
+- [한국관광공사 Tour API](https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15101567)
+
+---
+
+## 🔮 향후 계획
+
+- ✅ 추천 알고리즘 구현
+- ✅ 지역 기반 맞춤 서비스 강화
+- ✅ 여행 일정 자동 생성 기능
+- ✅ 소셜 로그인 (Google, Apple) 추가
+- ✅ 다국어 지원
+
+---
+
+## 📄 라이선스
+
+이 프로젝트는 교육 목적으로 개발되었습니다.
+
+---
+
+## 🙏 기여하기
+
+버그 리포트나 기능 제안은 Issue를 통해 알려주세요. Pull Request도 환영합니다!
+
+---
+
+<div align="center">
+
+**Made with ❤️ by Cospicker Team**
+
+</div>

@@ -86,7 +86,7 @@ class _MyinfoScreenState extends State<MyinfoScreen> {
         profileImageUrl = downloadUrl;
       });
     } catch (e) {
-      print("프로필 이미지 업로드 실패: $e");
+      // 프로필 이미지 업로드 실패
     }
   }
 

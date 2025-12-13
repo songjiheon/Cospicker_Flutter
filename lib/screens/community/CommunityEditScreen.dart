@@ -180,7 +180,7 @@ class _CommunityEditScreenState extends State<CommunityEditScreen> {
           await oldImageRef.delete();
         } catch (e) {
           // 이미지 삭제 실패해도 계속 진행
-          print('기존 이미지 삭제 실패: $e');
+          // 기존 이미지 삭제 실패
         }
       }
 

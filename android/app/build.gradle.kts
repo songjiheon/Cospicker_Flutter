@@ -36,9 +36,16 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // ⚠️ 배포 전 필수: 프로덕션용 키스토어로 서명 설정 필요
+            // 1. 키스토어 생성: keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+            // 2. key.properties 파일 생성 (keystorePropertiesFile 경로 설정)
+            // 3. signingConfigs 블록 추가하여 release signingConfig 설정
+            // 현재는 디버그 키로 서명 중 (배포용으로 사용 금지)
             signingConfig = signingConfigs.getByName("debug")
+            
+            // 프로덕션 빌드 최적화
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 }

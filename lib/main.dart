@@ -3,6 +3,7 @@ import 'package:cospicker/screens/community/community_main_screen.dart';
 import 'package:cospicker/screens/community/CommunityWriting.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cospicker/models/content_type.dart';   // ⭐ 공통 enum
 
 import 'screens/splash/SplashScreen.dart';
@@ -62,6 +63,7 @@ final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
